@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Home, TrendingUp, CreditCard, Wallet, 
-  Settings, Plus, MoreVertical, Trash2, 
+  Settings, Plus, Trash2, 
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
   X
 } from 'lucide-react';
@@ -174,51 +174,50 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
       <div className="toss-card detail-card">
         <div className="card-header-v2">
           <div className="card-title">{title} 내역</div>
-          <DateNavigator className="card-date-nav" year={viewDate.year} month={viewDate.month} onPrev={() => navigateMonth(-1)} onNext={() => navigateMonth(1)} />
+          <DateNavigator year={viewDate.year} month={viewDate.month} onPrev={() => navigateMonth(-1)} onNext={() => navigateMonth(1)} />
           <button className="btn-add-icon" onClick={onAdd}><Plus size={26} /></button>
         </div>
 
         <div className="item-list">
-        {filteredItems.map(item => (
-          <div key={item.id} className="item-row" style={{ alignItems: 'flex-start' }}>
-            <div className="logo-box" style={{ marginTop: '4px' }}>
-              {item.logoUrl ? <img src={item.logoUrl} alt="" className="item-logo-img" crossOrigin="anonymous" /> : <div className="logo-placeholder">{(item.source || item.name || item.product || '?').charAt(0)}</div>}
-            </div>
-            <div className="item-content">
-              <div className="item-title">{item.source || item.name || item.product}</div>
-              <div className="item-desc" style={{ color: 'var(--toss-text-sub)', opacity: 0.7, fontSize: '12px', marginTop: '2px' }}>{item.day}일 | {item.provider}</div>
-              {isLoan && item.principal > 0 && (() => {
-                const [startY, startM] = (item.startDate || "2000-01-01").split('-').map(Number);
-                const monthsPassed = (viewDate.year * 12 + viewDate.month) - (startY * 12 + (startM || 1));
-                const currentBalance = calculateLoanBalance(item, Math.max(0, monthsPassed));
-                const progress = item.principal ? Math.min(100, Math.round(((item.principal - currentBalance) / item.principal) * 100)) : 0;
-                return (
-                  <div className="loan-progress-container">
-                    <div className="progress-info">
-                      <span>{item.repaymentMethod === REPAYMENT.BULLET ? '만기일시' : '원리금균등'} 상환 중</span>
-                      <span className="progress-percent">{progress}%</span>
+          {filteredItems.map(item => (
+            <div key={item.id} className="item-row" style={{ alignItems: 'flex-start' }} onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}>
+              <div className="logo-box" style={{ marginTop: '4px' }}>
+                {item.logoUrl ? <img src={item.logoUrl} alt="" className="item-logo-img" crossOrigin="anonymous" /> : <div className="logo-placeholder">{(item.source || item.name || item.product || '?').charAt(0)}</div>}
+              </div>
+              <div className="item-content">
+                <div className="item-title">{item.source || item.name || item.product}</div>
+                <div className="item-desc" style={{ color: 'var(--toss-text-sub)', opacity: 0.7, fontSize: '11px', marginTop: '2px' }}>{item.day}일 | {item.provider}</div>
+                {isLoan && item.principal > 0 && (() => {
+                  const [startY, startM] = (item.startDate || "2000-01-01").split('-').map(Number);
+                  const monthsPassed = (viewDate.year * 12 + viewDate.month) - (startY * 12 + (startM || 1));
+                  const currentBalance = calculateLoanBalance(item, Math.max(0, monthsPassed));
+                  const progress = item.principal ? Math.min(100, Math.round(((item.principal - currentBalance) / item.principal) * 100)) : 0;
+                  return (
+                    <div className="loan-progress-container">
+                      <div className="progress-info">
+                        <span>{item.repaymentMethod === REPAYMENT.BULLET ? '만기일시' : '원리금균등'} 상환 중</span>
+                        <span className="progress-percent">{progress}%</span>
+                      </div>
+                      <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${progress}%` }}></div></div>
+                      <div className="progress-info" style={{ marginTop: '2px', opacity: 0.6 }}><span>잔액: ₩{formatCurrency(currentBalance)}</span></div>
                     </div>
-                    <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${progress}%` }}></div></div>
-                    <div className="progress-info" style={{ marginTop: '2px', opacity: 0.6 }}><span>잔액: ₩{formatCurrency(currentBalance)}</span></div>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
+              </div>
+              <div className="item-amount" style={{ color: 'var(--toss-text-main)', marginTop: '4px' }}>
+                ₩{formatCurrency(
+                  item.amount || (
+                    isLoan 
+                      ? (item.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(item.principal, item.rate) : calculateEMI(item.principal, item.rate, item.term))
+                      : item.monthlyPayment
+                  )
+                )}
+              </div>
+              <AnimatePresence>{activeMenuId === item.id && <ActionMenu onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onClose={() => setActiveMenuId(null)} />}</AnimatePresence>
             </div>
-            <div className="item-amount" style={{ color: 'var(--toss-text-main)', marginTop: '4px' }}>
-              ₩{formatCurrency(
-                item.amount || (
-                  isLoan 
-                    ? (item.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(item.principal, item.rate) : calculateEMI(item.principal, item.rate, item.term))
-                    : item.monthlyPayment
-                )
-              )}
-            </div>
-            <button className="btn-more" style={{ marginTop: '0px' }} onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}><MoreVertical size={20} /></button>
-            <AnimatePresence>{activeMenuId === item.id && <ActionMenu onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onClose={() => setActiveMenuId(null)} />}</AnimatePresence>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
     </>
   );
 }
