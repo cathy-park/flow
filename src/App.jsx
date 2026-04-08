@@ -115,8 +115,8 @@ function ActionMenu({ onEdit, onDelete, onClose }) {
   }, [onClose]);
   return (
     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="action-menu" ref={ref}>
-      <div className="menu-item" onClick={onEdit}><Edit3 size={16} /> 수정</div>
-      <div className="menu-item menu-delete" onClick={onDelete}><Trash2 size={16} /> 삭제</div>
+      <div className="menu-item" onClick={(e) => { e.stopPropagation(); onEdit(); }}><Edit3 size={16} /> 수정</div>
+      <div className="menu-item menu-delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}><Trash2 size={16} /> 삭제</div>
     </motion.div>
   );
 }
@@ -188,8 +188,14 @@ function DetailTab({ title, items, viewDate, navigateMonth, onAdd, onEdit, onDel
                 );
               })()}
             </div>
-            <div className="item-amount" style={{ color: (item.amount > 0 || item.monthlyPayment > 0) ? (title === '수입' ? 'var(--toss-blue)' : 'var(--toss-text-main)') : 'var(--toss-text-main)', marginTop: '4px' }}>
-              ₩{formatCurrency(item.amount || (item.monthlyPayment || calculateEMI(item.principal, item.rate, item.term)))}
+            <div className="item-amount" style={{ color: (item.amount > 0 || (item.monthlyPayment > 0 || item.principal > 0)) ? (title === '수입' ? 'var(--toss-blue)' : 'var(--toss-text-main)') : 'var(--toss-text-main)', marginTop: '4px' }}>
+              ₩{formatCurrency(
+                item.amount || (
+                  isLoan 
+                    ? (item.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(item.principal, item.rate) : calculateEMI(item.principal, item.rate, item.term))
+                    : item.monthlyPayment
+                )
+              )}
             </div>
             <button className="btn-more" style={{ marginTop: '0px' }} onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}><MoreHorizontal size={20} /></button>
             <AnimatePresence>{activeMenuId === item.id && <ActionMenu onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onClose={() => setActiveMenuId(null)} />}</AnimatePresence>
@@ -252,6 +258,10 @@ function ModalUI({ modal, onSave, setModal }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">날짜 (일)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.day || ''} onChange={e => setF({...f, day: parseInt(e.target.value) || 1})} /></div></div>
           <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금융기관/카드</label><div className="toss-input-container"><input className="toss-input" value={f.provider || ''} onChange={e => setF({...f, provider: e.target.value})} /></div></div>
+        </div>
+        <div className="form-group" style={{ marginBottom: '1.2rem' }}>
+          <label className="form-label">아이콘 URL (선택)</label>
+          <div className="toss-input-container"><input className="toss-input" value={f.logoUrl || ''} onChange={e => setF({...f, logoUrl: e.target.value})} placeholder="https://... 또는 /assets/..." /></div>
         </div>
         <div className="btn-group">
           <button className="btn-base btn-grey" onClick={() => setModal({ type: null })}>취소</button>

@@ -80,7 +80,7 @@ body { background-color: var(--toss-bg); color: var(--toss-text-main); overflow-
 /* --- CARDS & ROWS --- */
 .toss-card { 
   background: var(--toss-white); border-radius: var(--card-radius); box-shadow: var(--toss-shadow); 
-  margin-bottom: 20px; overflow: hidden; padding: 36px 20px 24px 20px;
+  margin-bottom: 20px; overflow: visible; padding: 36px 20px 24px 20px;
   display: flex; flex-direction: column; gap: 14px;
 }
 
@@ -109,7 +109,7 @@ body { background-color: var(--toss-bg); color: var(--toss-text-main); overflow-
 .stat-amount { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.5px; }
 
 /* --- DETAIL & LIST --- */
-.detail-card { padding-top: 18px; padding-bottom: 1.5rem; }
+.detail-card { padding-top: 18px; padding-bottom: 1.5rem; overflow: visible; }
 .card-header-v2 { 
   padding: 0.75rem 1rem 1rem 1rem; 
   display: flex; justify-content: space-between; align-items: center; 
