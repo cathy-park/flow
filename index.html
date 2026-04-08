@@ -7,6 +7,22 @@
     <title>Flow</title>
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#ffffff" />
+    <script>
+      // Aggressive cache busting script for PWA migration
+      const CURRENT_VERSION = 'v3';
+      if (localStorage.getItem('app_version') !== CURRENT_VERSION) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(registrations => {
+            for (let registration of registrations) { registration.unregister(); }
+            localStorage.setItem('app_version', CURRENT_VERSION);
+            window.location.reload(true);
+          });
+        } else {
+          localStorage.setItem('app_version', CURRENT_VERSION);
+          window.location.reload(true);
+        }
+      }
+    </script>
     <link rel="apple-touch-icon" href="/assets/icon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

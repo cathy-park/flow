@@ -80,7 +80,7 @@ body { background-color: var(--toss-bg); color: var(--toss-text-main); overflow-
 /* --- CARDS & ROWS --- */
 .toss-card { 
   background: var(--toss-white); border-radius: var(--card-radius); box-shadow: var(--toss-shadow); 
-  margin-bottom: 20px; overflow: visible; padding: 36px 20px 24px 20px;
+  margin-bottom: 20px; overflow: visible; padding: 32px 20px;
   display: flex; flex-direction: column; gap: 14px;
 }
 
@@ -122,6 +122,22 @@ body { background-color: var(--toss-bg); color: var(--toss-text-main); overflow-
 .btn-add-icon:active { transform: scale(0.9); }
 
 .item-list { padding: 0 0.75rem; display: flex; flex-direction: column; gap: 14px; }
+
+.detail-total-section {
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+}
+.summary-card-v2 { padding: 32px 24px; margin-bottom: 24px; }
+.total-left { display: flex; align-items: center; gap: 14px; }
+.summary-icon-wrapper {
+  width: 60px; height: 60px;
+  background-color: #F2F4F5;
+  border-radius: 50%;
+  display: flex; justify-content: center; align-items: center;
+}
+.summary-card-icon { width: 34px; height: 34px; object-fit: contain; }
+.detail-total-label { font-size: 15px; font-weight: 600; color: var(--toss-text-main); }
+.detail-total-amount { font-size: 1.6rem; font-weight: 900; color: var(--toss-text-main); letter-spacing: -1px; margin-right: 10px; }
+
 .item-row { 
   display: grid; grid-template-columns: 48px 1fr auto 44px; 
   align-items: center; gap: 20px; padding: 0; border-radius: 20px;
