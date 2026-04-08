@@ -82,7 +82,7 @@ function DateNavigator({ year, month, onPrev, onNext, isYearly = false }) {
 function NavItem({ label, Icon, active, onClick }) {
   return (
     <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick}>
-      <Icon size={24} />
+      <Icon size={20} />
       <span>{label}</span>
     </button>
   );
@@ -124,7 +124,7 @@ function ActionMenu({ onEdit, onDelete, onClose }) {
 function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear, onNavigate, onCopy }) {
   return (
     <div className="home-view">
-      <div className="toss-card" style={{ marginBottom: '30px' }}>
+      <div className="toss-card" style={{ marginBottom: '20px' }}>
         <div className="home-card-header">
           <DateNavigator 
             year={viewDate.year} 
@@ -242,7 +242,7 @@ function ModalUI({ modal, onSave, setModal }) {
 
   return (
     <div className="modal-backdrop" onClick={() => setModal({ type: null })}>
-      <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-box" style={{ maxHeight: '90vh', overflowY: 'auto', padding: '1.5rem 2rem' }} onClick={e => e.stopPropagation()}>
+      <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-box" style={{ maxHeight: '90vh', overflowY: 'auto', padding: '1.25rem 1.5rem' }} onClick={e => e.stopPropagation()}>
         <h3 className="modal-title">{modal.type === 'add' ? '내역 추가' : '수정하기'}</h3>
         <div className="form-group" style={{ marginBottom: '1.2rem' }}>
           <label className="form-label">{isLoan ? '대출 상품명' : '항목명'}</label>
