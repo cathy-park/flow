@@ -81,7 +81,7 @@ body { background-color: var(--toss-bg); color: var(--toss-text-main); overflow-
 .toss-card { 
   background: var(--toss-white); border-radius: var(--card-radius); box-shadow: var(--toss-shadow); 
   margin-bottom: 20px; overflow: hidden; padding: 36px 20px 24px 20px;
-  display: flex; flex-direction: column; gap: 7px;
+  display: flex; flex-direction: column; gap: 14px;
 }
 
 .summary-row {
@@ -121,7 +121,7 @@ body { background-color: var(--toss-bg); color: var(--toss-text-main); overflow-
 .btn-add-icon { background: none; border: none; color: var(--toss-blue); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s; flex-shrink: 0; }
 .btn-add-icon:active { transform: scale(0.9); }
 
-.item-list { padding: 0 0.75rem; }
+.item-list { padding: 0 0.75rem; display: flex; flex-direction: column; gap: 14px; }
 .item-row { 
   display: grid; grid-template-columns: 48px 1fr auto 44px; 
   align-items: center; gap: 20px; padding: 0; border-radius: 20px;

@@ -376,7 +376,7 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <header className="main-header"><div className="header-inner"><div className="brand-logo" onClick={() => setActiveTab('home')}>FLOW<span className="brand-dot">.</span></div><button className="settings-pill" onClick={() => setIsSettingsOpen(true)}><Settings size={18} /> 설정</button></div></header>
+      <header className="main-header"><div className="header-inner"><div className="brand-logo" onClick={() => setActiveTab('home')}><img src="/assets/logo.png" alt="FLOW" style={{ height: '24px', display: 'block' }} /></div><button className="settings-pill" onClick={() => setIsSettingsOpen(true)}><Settings size={18} /> 설정</button></div></header>
       <div className="app-container">
         <main style={{ paddingBottom: '40px' }}>
           {activeTab === 'home' && <HomeView viewDate={viewDate} totals={totals} yearlyTotals={yearlyTotals} navigateMonth={navigateMonth} navigateYear={e => setViewDate({...viewDate, year: viewDate.year + e})} onNavigate={setActiveTab} onCopy={manualCopyPrevious} />}
