@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Home, TrendingUp, CreditCard, Wallet, 
-  Settings, Plus, MoreHorizontal, Trash2, 
+  Settings, Plus, MoreVertical, Trash2, 
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
   X
 } from 'lucide-react';
@@ -204,7 +204,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
                 );
               })()}
             </div>
-            <div className="item-amount" style={{ color: (item.amount > 0 || (item.monthlyPayment > 0 || item.principal > 0)) ? (title === '수입' ? 'var(--toss-blue)' : 'var(--toss-text-main)') : 'var(--toss-text-main)', marginTop: '4px' }}>
+            <div className="item-amount" style={{ color: 'var(--toss-text-main)', marginTop: '4px' }}>
               ₩{formatCurrency(
                 item.amount || (
                   isLoan 
@@ -213,7 +213,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
                 )
               )}
             </div>
-            <button className="btn-more" style={{ marginTop: '0px' }} onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}><MoreHorizontal size={20} /></button>
+            <button className="btn-more" style={{ marginTop: '0px' }} onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}><MoreVertical size={20} /></button>
             <AnimatePresence>{activeMenuId === item.id && <ActionMenu onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onClose={() => setActiveMenuId(null)} />}</AnimatePresence>
           </div>
         ))}
