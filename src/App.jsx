@@ -5,11 +5,16 @@ import {
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
   X
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 
 // --- CONFIG & UTILS ---
 const STORAGE_KEY = 'flow_final_concept_v3';
 const formatCurrency = (val) => new Intl.NumberFormat('ko-KR').format(val);
+const Price = ({ amount, color, className = "", style = {} }) => (
+  <span className={`price-container ${className}`} style={{ color, ...style }}>
+    {formatCurrency(amount)}<span className="unit-krw">원</span>
+  </span>
+);
 
 const REPAYMENT = {
   EQUAL: 'equal', // 원리금 균등
@@ -91,13 +96,15 @@ function NavItem({ label, Icon, active, onClick }) {
 function HomeSummaryRow({ icon, label, amount, color, subText, onClick }) {
   return (
     <div className="summary-row" onClick={onClick}>
-      <div className="summary-icon-box">
-        <img src={icon} alt="" className="summary-icon-img" />
-      </div>
-      <div className="summary-content">
-        <span className="summary-label">{label}</span>
-        <span className="summary-amount" style={{ color }}>₩{formatCurrency(amount)}</span>
-        {subText && <span className="summary-subtext">{subText}</span>}
+      <div className="summary-left">
+        <div className="summary-icon-box">
+          <img src={icon} alt="" className="summary-icon-img" />
+        </div>
+        <div className="summary-text-stack">
+          <span className="summary-label">{label}</span>
+          <Price amount={amount} color={color} className="summary-amount" />
+          {subText && <span className="summary-subtext">{subText}</span>}
+        </div>
       </div>
       <div className="chevron-box">
         <ChevronRIcon size={20} />
@@ -106,18 +113,39 @@ function HomeSummaryRow({ icon, label, amount, color, subText, onClick }) {
   );
 }
 
-function ActionMenu({ onEdit, onDelete, onClose }) {
-  const ref = useRef();
-  useEffect(() => {
-    const fn = (e) => { if(ref.current && !ref.current.contains(e.target)) onClose(); };
-    document.addEventListener('mousedown', fn);
-    return () => document.removeEventListener('mousedown', fn);
-  }, [onClose]);
+function SwipeableItem({ children, onEdit, onDelete }) {
+  const controls = useAnimation();
+  const onDragEnd = (event, info) => {
+    if (info.offset.x < -50 || info.velocity.x < -500) {
+      controls.start({ x: -140, transition: { type: 'spring', damping: 20, stiffness: 200 } });
+    } else {
+      controls.start({ x: 0, transition: { type: 'spring', damping: 25, stiffness: 200 } });
+    }
+  };
+
   return (
-    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="action-menu" ref={ref}>
-      <div className="menu-item" onClick={(e) => { e.stopPropagation(); onEdit(); }}><Edit3 size={16} /> 수정</div>
-      <div className="menu-item menu-delete" onClick={(e) => { e.stopPropagation(); onDelete(); }}><Trash2 size={16} /> 삭제</div>
-    </motion.div>
+    <div className="swipe-container">
+      <div className="swipe-actions-bg">
+        <button className="swipe-btn btn-swipe-edit" onClick={(e) => { e.stopPropagation(); onEdit(); controls.start({ x: 0 }); }}>
+          <Edit3 size={18} />
+          <span>수정</span>
+        </button>
+        <button className="swipe-btn btn-swipe-delete" onClick={(e) => { e.stopPropagation(); onDelete(); controls.start({ x: 0 }); }}>
+          <Trash2 size={18} />
+          <span>삭제</span>
+        </button>
+      </div>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -140, right: 0 }}
+        dragElastic={0.15}
+        animate={controls}
+        onDragEnd={onDragEnd}
+        style={{ x: 0, position: 'relative', zIndex: 2 }}
+      >
+        {children}
+      </motion.div>
+    </div>
   );
 }
 
@@ -132,19 +160,22 @@ function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear,
             onPrev={() => navigateMonth(-1)} 
             onNext={() => navigateMonth(1)} 
           />
-          <button className="btn-clone-text" onClick={onCopy}>이전 달 가져오기</button>
+          <button className="btn-clone-text" onClick={onCopy}>
+            <span className="btn-full-text">이전 달 가져오기</span>
+            <span className="btn-short-text">가져오기</span>
+          </button>
         </div>
         <HomeSummaryRow icon={ASSETS.ICON_INCOME} label="이번 달 총 수입" amount={totals.income} color="var(--toss-blue)" onClick={() => onNavigate('incomes')} />
         <HomeSummaryRow icon={ASSETS.ICON_EXPENSE} label="이번 달 총 고정지출" amount={totals.expense} color="var(--toss-text-main)" onClick={() => onNavigate('expenses')} />
-        <HomeSummaryRow icon={ASSETS.ICON_LOAN} label="이번 달 대출 납입" amount={totals.loanMonthly} color="var(--toss-orange)" subText={`전체 잔액 ₩${formatCurrency(totals.loanBalance)}`} onClick={() => onNavigate('loans')} />
+        <HomeSummaryRow icon={ASSETS.ICON_LOAN} label="이번 달 대출 납입" amount={totals.loanMonthly} color="var(--toss-orange)" subText={<>전체 잔액 <Price amount={totals.loanBalance} /></>} onClick={() => onNavigate('loans')} />
       </div>
 
       <div className="toss-card yearly-summary-section">
         <DateNavigator year={viewDate.year} isYearly onPrev={() => navigateYear(-1)} onNext={() => navigateYear(1)} />
         <div className="yearly-stats-container">
-          <div className="yearly-stat-row"><span className="stat-label">연간 총 수입</span><span className="stat-amount" style={{ color: 'var(--toss-blue)' }}>₩{formatCurrency(yearlyTotals.income)}</span></div>
-          <div className="yearly-stat-row"><span className="stat-label">연간 총 지출</span><span className="stat-amount" style={{ color: 'var(--toss-text-main)' }}>₩{formatCurrency(yearlyTotals.expense)}</span></div>
-          <div className="yearly-stat-row"><span className="stat-label">연간 대출 상환</span><span className="stat-amount" style={{ color: 'var(--toss-orange)' }}>₩{formatCurrency(yearlyTotals.loan)}</span></div>
+          <div className="yearly-stat-row"><span className="stat-label">연간 총 수입</span><Price amount={yearlyTotals.income} color="var(--toss-blue)" className="stat-amount" /></div>
+          <div className="yearly-stat-row"><span className="stat-label">연간 총 지출</span><Price amount={yearlyTotals.expense} color="var(--toss-text-main)" className="stat-amount" /></div>
+          <div className="yearly-stat-row"><span className="stat-label">연간 대출 상환</span><Price amount={yearlyTotals.loan} color="var(--toss-orange)" className="stat-amount" /></div>
         </div>
       </div>
     </div>
@@ -157,17 +188,31 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
   const summaryIcon = title === '수입' ? '/assets/income_bag.png' : (title === '고정지출' ? '/assets/wallet_wings.png' : '/assets/money_stack.png');
   const summaryColor = title === '수입' ? 'var(--toss-blue)' : (title === '고정지출' ? 'var(--toss-text-main)' : 'var(--toss-orange)');
   
+  const loanBalance = items.reduce((acc, i) => {
+    const [sY, sM] = (i.startDate || "2000-01-01").split('-').map(Number);
+    const monthsPassed = (viewDate.year * 12 + viewDate.month) - (sY * 12 + (sM || 1));
+    return acc + calculateLoanBalance(i, Math.max(0, monthsPassed));
+  }, 0);
+
   return (
     <>
       <div className="toss-card summary-card-v2">
         <div className="detail-total-section">
-          <div className="total-left">
+          <div className="summary-left">
             <div className="summary-icon-wrapper">
               <img src={summaryIcon} alt="" className="summary-card-icon" />
             </div>
-            <span className="detail-total-label">이번 달 {title} 총액</span>
+            <div className="summary-text-stack">
+              <span className="detail-total-label">이번 달 {title} 총액</span>
+              <Price amount={total} color={summaryColor} className="detail-total-amount" />
+              {isLoan && (
+                <div className="loan-balance-row">
+                  <span className="balance-label">남은 대출 총액 </span>
+                  <Price amount={loanBalance} className="balance-value" />
+                </div>
+              )}
+            </div>
           </div>
-          <span className="detail-total-amount" style={{ color: summaryColor }}>₩{formatCurrency(total)}</span>
         </div>
       </div>
 
@@ -178,43 +223,44 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
           <button className="btn-add-icon" onClick={onAdd}><Plus size={26} /></button>
         </div>
 
-        <div className="item-list">
+        <div className="item-list" style={{ gap: isLoan ? '28px' : '14px' }}>
           {filteredItems.map(item => (
-            <div key={item.id} className="item-row" style={{ alignItems: 'flex-start' }} onClick={() => setActiveMenuId(activeMenuId === item.id ? null : item.id)}>
-              <div className="logo-box" style={{ marginTop: '4px' }}>
-                {item.logoUrl ? <img src={item.logoUrl} alt="" className="item-logo-img" crossOrigin="anonymous" /> : <div className="logo-placeholder">{(item.source || item.name || item.product || '?').charAt(0)}</div>}
-              </div>
-              <div className="item-content">
-                <div className="item-title">{item.source || item.name || item.product}</div>
-                <div className="item-desc" style={{ color: 'var(--toss-text-sub)', opacity: 0.7, fontSize: '11px', marginTop: '2px' }}>{item.day}일 | {item.provider}</div>
-                {isLoan && item.principal > 0 && (() => {
-                  const [startY, startM] = (item.startDate || "2000-01-01").split('-').map(Number);
-                  const monthsPassed = (viewDate.year * 12 + viewDate.month) - (startY * 12 + (startM || 1));
-                  const currentBalance = calculateLoanBalance(item, Math.max(0, monthsPassed));
-                  const progress = item.principal ? Math.min(100, Math.round(((item.principal - currentBalance) / item.principal) * 100)) : 0;
-                  return (
-                    <div className="loan-progress-container">
-                      <div className="progress-info">
-                        <span>{item.repaymentMethod === REPAYMENT.BULLET ? '만기일시' : '원리금균등'} 상환 중</span>
-                        <span className="progress-percent">{progress}%</span>
+            <SwipeableItem key={item.id} onEdit={() => onEdit(item)} onDelete={() => onDelete(item)}>
+              <div className="item-row" style={{ alignItems: 'flex-start' }}>
+                <div className="logo-box" style={{ marginTop: '4px' }}>
+                  {item.logoUrl ? <img src={item.logoUrl} alt="" className="item-logo-img" crossOrigin="anonymous" /> : <div className="logo-placeholder">{(item.source || item.name || item.product || '?').charAt(0)}</div>}
+                </div>
+                <div className="item-content">
+                  <div className="item-title">{item.source || item.name || item.product}</div>
+                  <div className="item-desc" style={{ color: 'var(--toss-text-sub)', opacity: 0.7, fontSize: '11px', marginTop: '2px' }}>{item.day}일 | {item.provider}</div>
+                  {isLoan && item.principal > 0 && (() => {
+                    const [startY, startM] = (item.startDate || "2000-01-01").split('-').map(Number);
+                    const monthsPassed = (viewDate.year * 12 + viewDate.month) - (startY * 12 + (startM || 1));
+                    const currentBalance = calculateLoanBalance(item, Math.max(0, monthsPassed));
+                    const progress = item.principal ? Math.min(100, Math.round(((item.principal - currentBalance) / item.principal) * 100)) : 0;
+                    return (
+                      <div className="loan-progress-container">
+                        <div className="progress-info">
+                          <span>{item.repaymentMethod === REPAYMENT.BULLET ? '만기일시' : '원리금균등'} 상환 중</span>
+                          <span className="progress-percent">{progress}%</span>
+                        </div>
+                        <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${progress}%` }}></div></div>
+                        <div className="progress-info" style={{ marginTop: '2px', opacity: 0.6 }}><span>잔액: <Price amount={currentBalance} /></span></div>
                       </div>
-                      <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${progress}%` }}></div></div>
-                      <div className="progress-info" style={{ marginTop: '2px', opacity: 0.6 }}><span>잔액: ₩{formatCurrency(currentBalance)}</span></div>
-                    </div>
-                  );
-                })()}
+                    );
+                  })()}
+                </div>
+                <div className="item-amount" style={{ color: 'var(--toss-text-main)', marginTop: '4px' }}>
+                  <Price amount={
+                    item.amount || (
+                      isLoan 
+                        ? (item.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(item.principal, item.rate) : calculateEMI(item.principal, item.rate, item.term))
+                        : item.monthlyPayment
+                    )
+                  } />
+                </div>
               </div>
-              <div className="item-amount" style={{ color: 'var(--toss-text-main)', marginTop: '4px' }}>
-                ₩{formatCurrency(
-                  item.amount || (
-                    isLoan 
-                      ? (item.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(item.principal, item.rate) : calculateEMI(item.principal, item.rate, item.term))
-                      : item.monthlyPayment
-                  )
-                )}
-              </div>
-              <AnimatePresence>{activeMenuId === item.id && <ActionMenu onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} onClose={() => setActiveMenuId(null)} />}</AnimatePresence>
-            </div>
+            </SwipeableItem>
           ))}
         </div>
       </div>
@@ -265,7 +311,10 @@ function ModalUI({ modal, onSave, setModal }) {
             </div>
             <div className="preview-box">
               <span className="preview-label">예상 월 납입금</span>
-              <div className="preview-value">₩{formatCurrency(f.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(f.principal, f.rate) : calculateEMI(f.principal, f.rate, f.term))} <span style={{ fontSize: '12px', color: 'var(--toss-text-sub)' }}>{f.repaymentMethod === REPAYMENT.BULLET ? '(이자만)' : '(원금+이자)'}</span></div>
+              <div className="preview-value">
+                <Price amount={f.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(f.principal, f.rate) : calculateEMI(f.principal, f.rate, f.term)} />
+                <span style={{ fontSize: '12px', color: 'var(--toss-text-sub)', marginLeft: '4px' }}>{f.repaymentMethod === REPAYMENT.BULLET ? '(이자만)' : '(원금+이자)'}</span>
+              </div>
               <div className="mini-chart">{Array.from({ length: 20 }).map((_, i) => <div key={i} className={`chart-bar ${f.repaymentMethod === REPAYMENT.BULLET && 'interest'}`} style={{ height: `${20 + Math.random() * 5 + (i * (f.repaymentMethod === REPAYMENT.EQUAL ? 1 : 0.4))}%` }} />)}</div>
             </div>
             <div className="form-group" style={{ marginBottom: '1.2rem', marginTop: '1.2rem' }}><label className="form-label">시작 날짜</label><div className="toss-input-container"><input className="toss-input" type="date" value={f.startDate || ''} onChange={e => setF({...f, startDate: e.target.value})} /></div></div>
@@ -402,13 +451,13 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      <header className="main-header"><div className="header-inner"><div className="brand-logo" onClick={() => setActiveTab('home')}><img src="/assets/logo.png" alt="FLOW" style={{ height: '24px', display: 'block' }} /></div><button className="settings-pill" onClick={() => setIsSettingsOpen(true)}><Settings size={18} /> 설정</button></div></header>
+      <header className="main-header"><div className="header-inner"><div className="brand-logo" onClick={() => setActiveTab('home')}><img src="/assets/logo.png" alt="FLOW" style={{ height: '20px', display: 'block' }} /></div><button className="settings-pill" onClick={() => setIsSettingsOpen(true)}><Settings size={18} /> 설정</button></div></header>
       <div className="app-container">
         <main style={{ paddingBottom: '40px' }}>
           {activeTab === 'home' && <HomeView viewDate={viewDate} totals={totals} yearlyTotals={yearlyTotals} navigateMonth={navigateMonth} navigateYear={e => setViewDate({...viewDate, year: viewDate.year + e})} onNavigate={setActiveTab} onCopy={manualCopyPrevious} />}
-          {activeTab === 'incomes' && <DetailTab title="수입" total={totals.income} items={data.incomes} viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'incomes', item: { amount: 0, day: 1 } })} onEdit={i => setModal({ type: 'edit', sector: 'incomes', item: i })} onDelete={i => setModal({ type: 'delete_confirm', sector: 'incomes', item: i })} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
-          {activeTab === 'expenses' && <DetailTab title="고정지출" total={totals.expense} items={data.expenses} viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'expenses', item: { amount: 0, day: 1 } })} onEdit={i => setModal({ type: 'edit', sector: 'expenses', item: i })} onDelete={i => setModal({ type: 'delete_confirm', sector: 'expenses', item: i })} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
-          {activeTab === 'loans' && <DetailTab title="대출" total={totals.loanMonthly} items={data.loans} isLoan viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} onDelete={i => setModal({ type: 'delete_confirm', sector: 'loans', item: i })} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
+          {activeTab === 'incomes' && <DetailTab title="수입" total={totals.income} items={data.incomes} viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'incomes', item: { amount: 0, day: 1 } })} onEdit={i => setModal({ type: 'edit', sector: 'incomes', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'incomes', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
+          {activeTab === 'expenses' && <DetailTab title="고정지출" total={totals.expense} items={data.expenses} viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'expenses', item: { amount: 0, day: 1 } })} onEdit={i => setModal({ type: 'edit', sector: 'expenses', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'expenses', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
+          {activeTab === 'loans' && <DetailTab title="대출" total={totals.loanMonthly} items={data.loans} isLoan viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
         </main>
       </div>
       <nav className="bottom-nav">
