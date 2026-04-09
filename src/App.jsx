@@ -3,7 +3,7 @@ import {
   Home, TrendingUp, CreditCard, Wallet, 
   Settings, Plus, Trash2, 
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
-  X
+  X, Calendar
 } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 
@@ -22,32 +22,47 @@ const REPAYMENT = {
 };
 
 // --- CALCULATORS ---
-const calculateEMI = (principal, annualRate, termMonths) => {
-  if (!principal || !termMonths) return 0;
-  const monthlyRate = (annualRate || 0) / 12 / 100;
-  if (monthlyRate === 0) return Math.floor(principal / termMonths);
-  const emi = (principal * monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / (Math.pow(1 + monthlyRate, termMonths) - 1);
-  return Math.floor(emi);
-};
-
-const calculateInterestOnly = (principal, annualRate) => {
-  if (!principal) return 0;
-  const monthlyRate = (annualRate || 0) / 12 / 100;
-  return Math.floor(principal * monthlyRate);
-};
-
-const calculateLoanBalance = (item, monthsPassed) => {
-  const { principal, rate, term, repaymentMethod } = item;
-  if (!principal || !term) return 0;
-  if (monthsPassed <= 0) return principal;
-  if (monthsPassed >= term) return 0;
-  if (repaymentMethod === REPAYMENT.BULLET) return principal;
-
-  const monthlyRate = (rate || 0) / 12 / 100;
-  if (monthlyRate === 0) return Math.floor(principal - (principal / term) * monthsPassed);
+const getLoanSnapshot = (item, year, month) => {
+  const { principal = 0, rate = 0, term = 12, repaymentMethod = REPAYMENT.EQUAL, startDate = '2000-01-01', inputMode = 'auto', manualAmount = 0, manualBalance = 0 } = item;
   
-  const balance = principal * (Math.pow(1 + monthlyRate, term) - Math.pow(1 + monthlyRate, monthsPassed)) / (Math.pow(1 + monthlyRate, term) - 1);
-  return Math.floor(balance);
+  const [sY, sM] = startDate.split('-').map(Number);
+  const startTotalMonths = sY * 12 + (sM || 1);
+  const targetTotalMonths = year * 12 + month;
+  const monthsPassed = targetTotalMonths - startTotalMonths;
+
+  if (monthsPassed < 0) return { monthlyPayment: 0, interest: 0, principalPaid: 0, remainingBalance: principal, progress: 0 };
+  if (monthsPassed >= term) return { monthlyPayment: 0, interest: 0, principalPaid: 0, remainingBalance: 0, progress: 100 };
+
+  if (inputMode === 'manual') {
+    const progress = principal ? Math.floor(((principal - manualBalance) / principal) * 100) : 0;
+    return { monthlyPayment: manualAmount, interest: 0, principalPaid: principal - manualBalance, remainingBalance: manualBalance, progress };
+  }
+
+  let currentBalance = principal;
+  let monthlyPayment = 0;
+  const monthlyRate = (rate || 0) / 12 / 100;
+
+  if (repaymentMethod === REPAYMENT.BULLET) {
+    monthlyPayment = Math.floor(principal * monthlyRate);
+    if (monthsPassed === term - 1) monthlyPayment += principal;
+    currentBalance = principal; 
+    if (monthsPassed >= term) currentBalance = 0;
+  } else {
+    if (monthlyRate === 0) {
+      monthlyPayment = Math.floor(principal / term);
+    } else {
+      monthlyPayment = Math.floor((principal * monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1));
+    }
+
+    for (let i = 0; i <= monthsPassed; i++) {
+      const interest = Math.floor(currentBalance * monthlyRate);
+      const principalRepaid = monthlyPayment - interest;
+      currentBalance -= principalRepaid;
+    }
+  }
+
+  const progress = principal ? Math.min(100, Math.floor(((principal - currentBalance) / principal) * 100)) : 0;
+  return { monthlyPayment, remainingBalance: Math.max(0, currentBalance), progress };
 };
 
 // --- INITIAL DATA ---
@@ -77,9 +92,9 @@ const ASSETS = {
 function DateNavigator({ year, month, onPrev, onNext, isYearly = false }) {
   return (
     <div className="card-date-nav">
-      <button className="nav-btn" onClick={onPrev}><ChevronLeft size={20} /></button>
+      <button className="nav-btn" onClick={onPrev}><ChevronLeft size={16} /></button>
       <span className="current-view-text">{year}년 {isYearly ? '' : `${month}월`}</span>
-      <button className="nav-btn" onClick={onNext}><ChevronRight size={20} /></button>
+      <button className="nav-btn" onClick={onNext}><ChevronRight size={16} /></button>
     </div>
   );
 }
@@ -87,7 +102,7 @@ function DateNavigator({ year, month, onPrev, onNext, isYearly = false }) {
 function NavItem({ label, Icon, active, onClick }) {
   return (
     <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick}>
-      <Icon size={20} />
+      <Icon size={18} />
       <span>{label}</span>
     </button>
   );
@@ -96,18 +111,16 @@ function NavItem({ label, Icon, active, onClick }) {
 function HomeSummaryRow({ icon, label, amount, color, subText, onClick }) {
   return (
     <div className="summary-row" onClick={onClick}>
-      <div className="summary-left">
-        <div className="summary-icon-box">
-          <img src={icon} alt="" className="summary-icon-img" />
-        </div>
-        <div className="summary-text-stack">
-          <span className="summary-label">{label}</span>
-          <Price amount={amount} color={color} className="summary-amount" />
-          {subText && <span className="summary-subtext">{subText}</span>}
-        </div>
+      <div className="summary-icon-box">
+        <img src={icon} alt="" className="summary-icon-img" />
       </div>
-      <div className="chevron-box">
-        <ChevronRIcon size={20} />
+      <div className="summary-text-stack">
+        <div className="summary-header">
+          <span className="summary-label">{label}</span>
+          <div className="chevron-box"><ChevronRIcon size={14} /></div>
+        </div>
+        <Price amount={amount} color={color} className="summary-amount" />
+        {subText && <span className="summary-subtext">{subText}</span>}
       </div>
     </div>
   );
@@ -127,21 +140,21 @@ function SwipeableItem({ children, onEdit, onDelete }) {
     <div className="swipe-container">
       <div className="swipe-actions-bg">
         <button className="swipe-btn btn-swipe-edit" onClick={(e) => { e.stopPropagation(); onEdit(); controls.start({ x: 0 }); }}>
-          <Edit3 size={18} />
+          <Edit3 size={16} />
           <span>수정</span>
         </button>
         <button className="swipe-btn btn-swipe-delete" onClick={(e) => { e.stopPropagation(); onDelete(); controls.start({ x: 0 }); }}>
-          <Trash2 size={18} />
+          <Trash2 size={16} />
           <span>삭제</span>
         </button>
       </div>
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -140, right: 0 }}
-        dragElastic={0.15}
-        animate={controls}
-        onDragEnd={onDragEnd}
-        style={{ x: 0, position: 'relative', zIndex: 2 }}
+      <motion.div 
+        drag="x" 
+        dragConstraints={{ left: -140, right: 0 }} 
+        dragElastic={0.1}
+        animate={controls} 
+        onDragEnd={onDragEnd} 
+        className="swipe-content-wrapper"
       >
         {children}
       </motion.div>
@@ -152,26 +165,40 @@ function SwipeableItem({ children, onEdit, onDelete }) {
 function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear, onNavigate, onCopy }) {
   return (
     <div className="home-view">
-      <div className="toss-card" style={{ marginBottom: '20px' }}>
-        <div className="home-card-header">
-          <DateNavigator 
-            year={viewDate.year} 
-            month={viewDate.month} 
-            onPrev={() => navigateMonth(-1)} 
-            onNext={() => navigateMonth(1)} 
-          />
-          <button className="btn-clone-text" onClick={onCopy}>
-            <span className="btn-full-text">이전 달 가져오기</span>
-            <span className="btn-short-text">가져오기</span>
-          </button>
+      <div className="toss-card">
+        <div className="card-internal-header home-header-v2">
+          <DateNavigator year={viewDate.year} month={viewDate.month} onPrev={() => navigateMonth(-1)} onNext={() => navigateMonth(1)} />
+          <button className="btn-clone-text" onClick={onCopy}>가져오기</button>
         </div>
-        <HomeSummaryRow icon={ASSETS.ICON_INCOME} label="이번 달 총 수입" amount={totals.income} color="var(--toss-blue)" onClick={() => onNavigate('incomes')} />
-        <HomeSummaryRow icon={ASSETS.ICON_EXPENSE} label="이번 달 총 고정지출" amount={totals.expense} color="var(--toss-text-main)" onClick={() => onNavigate('expenses')} />
-        <HomeSummaryRow icon={ASSETS.ICON_LOAN} label="이번 달 대출 납입" amount={totals.loanMonthly} color="var(--toss-orange)" subText={<>전체 잔액 <Price amount={totals.loanBalance} /></>} onClick={() => onNavigate('loans')} />
+
+        <HomeSummaryRow 
+          icon="/assets/income_bag.png" 
+          label="이번 달 총 수입" 
+          amount={totals.income} 
+          color="var(--toss-blue)"
+          onClick={() => onNavigate('incomes')} 
+        />
+        <HomeSummaryRow 
+          icon="/assets/wallet_wings.png" 
+          label="이번 달 총 고정지출" 
+          amount={totals.expense} 
+          color="var(--toss-text-main)"
+          onClick={() => onNavigate('expenses')} 
+        />
+        <HomeSummaryRow 
+          icon="/assets/money_stack.png" 
+          label="이번 달 대출 납입" 
+          amount={totals.loanMonthly} 
+          color="var(--toss-orange)"
+          subText={`전체 잔액 ${formatCurrency(totals.loanBalance)}원`}
+          onClick={() => onNavigate('loans')} 
+        />
       </div>
 
       <div className="toss-card yearly-summary-section">
-        <DateNavigator year={viewDate.year} isYearly onPrev={() => navigateYear(-1)} onNext={() => navigateYear(1)} />
+        <div className="yearly-card-header">
+          <DateNavigator year={viewDate.year} isYearly onPrev={() => navigateYear(-1)} onNext={() => navigateYear(1)} />
+        </div>
         <div className="yearly-stats-container">
           <div className="yearly-stat-row"><span className="stat-label">연간 총 수입</span><Price amount={yearlyTotals.income} color="var(--toss-blue)" className="stat-amount" /></div>
           <div className="yearly-stat-row"><span className="stat-label">연간 총 지출</span><Price amount={yearlyTotals.expense} color="var(--toss-text-main)" className="stat-amount" /></div>
@@ -188,77 +215,87 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
   const summaryIcon = title === '수입' ? '/assets/income_bag.png' : (title === '고정지출' ? '/assets/wallet_wings.png' : '/assets/money_stack.png');
   const summaryColor = title === '수입' ? 'var(--toss-blue)' : (title === '고정지출' ? 'var(--toss-text-main)' : 'var(--toss-orange)');
   
-  const loanBalance = items.reduce((acc, i) => {
-    const [sY, sM] = (i.startDate || "2000-01-01").split('-').map(Number);
-    const monthsPassed = (viewDate.year * 12 + viewDate.month) - (sY * 12 + (sM || 1));
-    return acc + calculateLoanBalance(i, Math.max(0, monthsPassed));
-  }, 0);
+  const loanSnap = isLoan ? filteredItems.reduce((acc, i) => {
+    const snap = getLoanSnapshot(i, viewDate.year, viewDate.month);
+    return { balance: acc.balance + snap.remainingBalance, principal: acc.principal + (i.principal || 0) };
+  }, { balance: 0, principal: 0 }) : null;
+
+  const totalProgress = (loanSnap && loanSnap.principal) ? Math.floor(((loanSnap.principal - loanSnap.balance) / loanSnap.principal) * 100) : 0;
 
   return (
     <>
       <div className="toss-card summary-card-v2">
         <div className="detail-total-section">
-          <div className="summary-left">
-            <div className="summary-icon-wrapper">
-              <img src={summaryIcon} alt="" className="summary-card-icon" />
-            </div>
-            <div className="summary-text-stack">
-              <span className="detail-total-label">이번 달 {title} 총액</span>
-              <Price amount={total} color={summaryColor} className="detail-total-amount" />
-              {isLoan && (
-                <div className="loan-balance-row">
-                  <span className="balance-label">남은 대출 총액 </span>
-                  <Price amount={loanBalance} className="balance-value" />
-                </div>
-              )}
-            </div>
+          <div className="summary-icon-box" style={{ width: '42px', height: '42px' }}>
+            <img src={summaryIcon} alt="" style={{ width: '32px', height: '32px' }} />
+          </div>
+          <div className="detail-total-wrapper">
+            <span className="detail-total-label">이번 달 {title} 총액</span>
+            <Price amount={total} color={summaryColor} className="detail-total-amount" />
+            {isLoan && (
+              <div className="loan-balance-row">
+                <span>남은 대출 총액 </span>
+                <Price amount={loanSnap.balance} />
+              </div>
+            )}
           </div>
         </div>
+        {isLoan && (
+          <div className="loan-progress-container" style={{ width: '100%', marginTop: '10px' }}>
+            <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${totalProgress}%`, backgroundColor: 'var(--toss-orange)' }} /></div>
+            <span className="progress-percent-text" style={{ color: 'var(--toss-orange)' }}>{totalProgress}%</span>
+          </div>
+        )}
       </div>
 
       <div className="toss-card detail-card">
         <div className="card-header-v2">
           <div className="card-title">{title} 내역</div>
           <DateNavigator year={viewDate.year} month={viewDate.month} onPrev={() => navigateMonth(-1)} onNext={() => navigateMonth(1)} />
-          <button className="btn-add-icon" onClick={onAdd}><Plus size={26} /></button>
+          <button className="btn-add-icon" onClick={onAdd}><Plus size={20} /></button>
         </div>
 
-        <div className="item-list" style={{ gap: isLoan ? '28px' : '14px' }}>
+        <div className="item-list">
           {filteredItems.map(item => (
             <SwipeableItem key={item.id} onEdit={() => onEdit(item)} onDelete={() => onDelete(item)}>
-              <div className="item-row" style={{ alignItems: 'flex-start' }}>
-                <div className="logo-box" style={{ marginTop: '4px' }}>
-                  {item.logoUrl ? <img src={item.logoUrl} alt="" className="item-logo-img" crossOrigin="anonymous" /> : <div className="logo-placeholder">{(item.source || item.name || item.product || '?').charAt(0)}</div>}
+              <div className={`item-row ${isLoan ? 'is-loan-item' : ''}`}>
+                <div className="item-row-main">
+                  <div className="logo-box">
+                    {item.logoUrl ? <img src={item.logoUrl} alt="" className="item-logo-img" crossOrigin="anonymous" /> : <div className="logo-placeholder">{(item.source || item.name || item.product || '?').charAt(0)}</div>}
+                  </div>
+                  <div className="item-content">
+                    <div className="item-title">{item.source || item.name || item.product}</div>
+                    <div className="item-desc">{item.day}일 | {item.provider}</div>
+                  </div>
+                  {!isLoan && (
+                    <div className="item-amount">
+                      <Price amount={item.amount || item.monthlyPayment} />
+                    </div>
+                  )}
                 </div>
-                <div className="item-content">
-                  <div className="item-title">{item.source || item.name || item.product}</div>
-                  <div className="item-desc" style={{ color: 'var(--toss-text-sub)', opacity: 0.7, fontSize: '11px', marginTop: '2px' }}>{item.day}일 | {item.provider}</div>
-                  {isLoan && item.principal > 0 && (() => {
-                    const [startY, startM] = (item.startDate || "2000-01-01").split('-').map(Number);
-                    const monthsPassed = (viewDate.year * 12 + viewDate.month) - (startY * 12 + (startM || 1));
-                    const currentBalance = calculateLoanBalance(item, Math.max(0, monthsPassed));
-                    const progress = item.principal ? Math.min(100, Math.round(((item.principal - currentBalance) / item.principal) * 100)) : 0;
-                    return (
-                      <div className="loan-progress-container">
-                        <div className="progress-info">
-                          <span>{item.repaymentMethod === REPAYMENT.BULLET ? '만기일시' : '원리금균등'} 상환 중</span>
-                          <span className="progress-percent">{progress}%</span>
-                        </div>
-                        <div className="progress-bar-bg"><div className="progress-bar-fill" style={{ width: `${progress}%` }}></div></div>
-                        <div className="progress-info" style={{ marginTop: '2px', opacity: 0.6 }}><span>잔액: <Price amount={currentBalance} /></span></div>
+                
+                {isLoan && (() => {
+                  const snap = getLoanSnapshot(item, viewDate.year, viewDate.month);
+                  return (
+                    <div className="loan-item-details">
+                      <div className="loan-item-amount-row">
+                        <Price amount={snap.monthlyPayment} className="loan-monthly-price" />
                       </div>
-                    );
-                  })()}
-                </div>
-                <div className="item-amount" style={{ color: 'var(--toss-text-main)', marginTop: '4px' }}>
-                  <Price amount={
-                    item.amount || (
-                      isLoan 
-                        ? (item.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(item.principal, item.rate) : calculateEMI(item.principal, item.rate, item.term))
-                        : item.monthlyPayment
-                    )
-                  } />
-                </div>
+                      
+                        <div className="loan-progress-detail">
+                          <div className="loan-status-text">
+                            {item.repaymentMethod === REPAYMENT.EQUAL ? '원리금균등' : '만기일시'} 상환 중 <span className="progress-highlight">{snap.progress}%</span>
+                          </div>
+                          <div className="progress-bar-bg">
+                            <div className="progress-bar-fill" style={{ width: `${snap.progress}%`, backgroundColor: 'var(--toss-orange)' }}></div>
+                          </div>
+                          <div className="loan-remaining-balance">
+                            잔액: <Price amount={snap.remainingBalance} />
+                          </div>
+                        </div>
+                    </div>
+                  );
+                })()}
               </div>
             </SwipeableItem>
           ))}
@@ -268,69 +305,120 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
   );
 }
 
-function ModalUI({ modal, onSave, setModal }) {
-  const [f, setF] = useState({ ...modal.item });
-  const [amtStr, setAmtStr] = useState(formatCurrency(modal.item.amount || 0));
-  const [pStr, setPStr] = useState(formatCurrency(modal.item.principal || 0));
+function ModalUI({ modal, onSave, setModal, viewDate }) {
+  const [f, setF] = useState({ 
+    inputMode: 'auto',
+    manualAmount: 0,
+    manualBalance: 0,
+    ...modal.item 
+  });
+  
+  const [amtStr, setAmtStr] = useState(formatCurrency(f.amount || f.manualAmount || 0));
+  const [pStr, setPStr] = useState(formatCurrency(f.principal || 0));
+  const [balStr, setBalStr] = useState(formatCurrency(f.manualBalance || 0));
+  
   const isLoan = modal.sector === 'loans';
 
   const handleAmt = (v) => {
     const n = parseInt(v.replace(/[^0-9]/g, '')) || 0;
     setAmtStr(n > 0 ? formatCurrency(n) : '');
-    setF({ ...f, amount: n });
+    if (isLoan) setF({ ...f, manualAmount: n });
+    else setF({ ...f, amount: n });
   };
   const handleP = (v) => {
     const n = parseInt(v.replace(/[^0-9]/g, '')) || 0;
     setPStr(n > 0 ? formatCurrency(n) : '');
     setF({ ...f, principal: n });
   };
+  const handleBal = (v) => {
+    const n = parseInt(v.replace(/[^0-9]/g, '')) || 0;
+    setBalStr(n > 0 ? formatCurrency(n) : '');
+    setF({ ...f, manualBalance: n });
+  };
+
+  const autoSnap = isLoan ? getLoanSnapshot(f, viewDate.year, viewDate.month) : null;
 
   return (
     <div className="modal-backdrop" onClick={() => setModal({ type: null })}>
-      <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-box" style={{ maxHeight: '90vh', overflowY: 'auto', padding: '1.25rem 1.5rem' }} onClick={e => e.stopPropagation()}>
-        <h3 className="modal-title">{modal.type === 'add' ? '내역 추가' : '수정하기'}</h3>
-        <div className="form-group" style={{ marginBottom: '1.2rem' }}>
-          <label className="form-label">{isLoan ? '대출 상품명' : '항목명'}</label>
-          <div className="toss-input-container"><input className="toss-input" value={f.source || f.name || f.product || ''} onChange={e => setF({...f, [isLoan ? 'product' : (modal.sector === 'incomes' ? 'source' : 'name')]: e.target.value})} placeholder="어디서 발생했나요?" autoFocus /></div>
+      <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="modal-box" style={{ maxHeight: '95vh' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title">{modal.type === 'add' ? '내역 추가' : '수정하기'}</h3>
         </div>
-        {!isLoan ? (
-          <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금액</label><div className="toss-input-container"><input className="toss-input" value={amtStr} onChange={e => handleAmt(e.target.value)} placeholder="0" /></div></div>
-        ) : (
-          <>
-            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">총 대출 원금</label><div className="toss-input-container"><input className="toss-input" value={pStr} onChange={e => handleP(e.target.value)} placeholder="0" /></div></div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">연 이율 (%)</label><div className="toss-input-container"><input className="toss-input" type="number" step="0.1" value={f.rate || ''} onChange={e => setF({...f, rate: parseFloat(e.target.value) || 0})} /></div></div>
-              <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">기간 (개월)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.term || ''} onChange={e => setF({...f, term: parseInt(e.target.value) || 12})} /></div></div>
-            </div>
+        
+        <div className="modal-body">
+          {isLoan && (
             <div className="form-group" style={{ marginBottom: '1.2rem' }}>
-              <label className="form-label">상환 방식</label>
+              <label className="form-label">입력 방식</label>
               <div className="repayment-selector">
-                <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.EQUAL ? 'active' : ''}`} onClick={() => setF({...f, repaymentMethod: REPAYMENT.EQUAL})}>원리금 균등</div>
-                <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.BULLET ? 'active' : ''}`} onClick={() => setF({...f, repaymentMethod: REPAYMENT.BULLET})}>만기 일시</div>
+                <div className={`repayment-option ${f.inputMode === 'auto' ? 'active' : ''}`} onClick={() => setF({...f, inputMode: 'auto'})}>🤖 자동 계산</div>
+                <div className={`repayment-option ${f.inputMode === 'manual' ? 'active' : ''}`} onClick={() => setF({...f, inputMode: 'manual'})}>✍️ 수동 기록</div>
               </div>
             </div>
-            <div className="preview-box">
-              <span className="preview-label">예상 월 납입금</span>
-              <div className="preview-value">
-                <Price amount={f.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(f.principal, f.rate) : calculateEMI(f.principal, f.rate, f.term)} />
-                <span style={{ fontSize: '12px', color: 'var(--toss-text-sub)', marginLeft: '4px' }}>{f.repaymentMethod === REPAYMENT.BULLET ? '(이자만)' : '(원금+이자)'}</span>
-              </div>
-              <div className="mini-chart">{Array.from({ length: 20 }).map((_, i) => <div key={i} className={`chart-bar ${f.repaymentMethod === REPAYMENT.BULLET && 'interest'}`} style={{ height: `${20 + Math.random() * 5 + (i * (f.repaymentMethod === REPAYMENT.EQUAL ? 1 : 0.4))}%` }} />)}</div>
-            </div>
-            <div className="form-group" style={{ marginBottom: '1.2rem', marginTop: '1.2rem' }}><label className="form-label">시작 날짜</label><div className="toss-input-container"><input className="toss-input" type="date" value={f.startDate || ''} onChange={e => setF({...f, startDate: e.target.value})} /></div></div>
-          </>
-        )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">날짜 (일)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.day || ''} onChange={e => setF({...f, day: parseInt(e.target.value) || 1})} /></div></div>
-          <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금융기관/카드</label><div className="toss-input-container"><input className="toss-input" value={f.provider || ''} onChange={e => setF({...f, provider: e.target.value})} /></div></div>
+          )}
+
+          <div className="form-group" style={{ marginBottom: '1.2rem' }}>
+            <label className="form-label">{isLoan ? '대출 상품명' : '항목명'}</label>
+            <div className="toss-input-container"><input className="toss-input" value={f.source || f.name || f.product || ''} onChange={e => setF({...f, [isLoan ? 'product' : (modal.sector === 'incomes' ? 'source' : 'name')]: e.target.value})} placeholder="어디서 발생했나요?" autoFocus /></div>
+          </div>
+
+          {isLoan ? (
+            <>
+              <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">총 대출 원금</label><div className="toss-input-container"><input className="toss-input" value={pStr} onChange={e => handleP(e.target.value)} placeholder="0" /></div></div>
+              
+              {f.inputMode === 'auto' ? (
+                <>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">연 이율 (%)</label><div className="toss-input-container"><input className="toss-input" type="number" step="0.1" value={f.rate || ''} onChange={e => setF({...f, rate: parseFloat(e.target.value) || 0})} /></div></div>
+                    <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">기간 (개월)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.term || ''} onChange={e => setF({...f, term: parseInt(e.target.value) || 12})} /></div></div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '1.2rem' }}>
+                    <label className="form-label">상환 방식</label>
+                    <div className="repayment-selector">
+                      <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.EQUAL ? 'active' : ''}`} onClick={() => setF({...f, repaymentMethod: REPAYMENT.EQUAL})}>원리금 균등</div>
+                      <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.BULLET ? 'active' : ''}`} onClick={() => setF({...f, repaymentMethod: REPAYMENT.BULLET})}>만기 일시</div>
+                    </div>
+                  </div>
+                  <div className="preview-box-enhanced">
+                    <span className="preview-label-v2">예상 월 납입금</span>
+                    <div>
+                      <span className="preview-amount-v2">{formatCurrency(autoSnap.monthlyPayment)}원</span>
+                      <span className="preview-sub-v2">{f.repaymentMethod === REPAYMENT.BULLET ? '(이자만)' : '(원금+이자)'}</span>
+                    </div>
+                    <div className="preview-chart-mock">
+                      {[3,5,4,6,5,7,6,8,7,9,8,10,9,11,10].map((h, i) => (
+                        <div key={i} className={`chart-bar ${i > 10 ? 'active' : ''}`} style={{ height: `${h * 10}%` }} />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: '1.2rem', marginTop: '1.2rem' }}><label className="form-label">시작 날짜</label><div className="toss-input-container" style={{ position: 'relative' }}><input className="toss-input" type="date" value={f.startDate || ''} onChange={e => setF({...f, startDate: e.target.value})} /><div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#111' }}><Calendar size={18} strokeWidth={2.5} /></div></div></div>
+                </>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금번 월 납입금</label><div className="toss-input-container"><input className="toss-input" value={amtStr} onChange={e => handleAmt(e.target.value)} placeholder="0" /></div></div>
+                  <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">현재 대출 잔액</label><div className="toss-input-container"><input className="toss-input" value={balStr} onChange={e => handleBal(e.target.value)} placeholder="0" /></div></div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금액</label><div className="toss-input-container"><input className="toss-input" value={amtStr} onChange={e => handleAmt(e.target.value)} placeholder="0" /></div></div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">날짜 (일)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.day || ''} onChange={e => setF({...f, day: parseInt(e.target.value) || 1})} /></div></div>
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금융기관/카드</label><div className="toss-input-container"><input className="toss-input" value={f.provider || ''} onChange={e => setF({...f, provider: e.target.value})} /></div></div>
+          </div>
+          
+          <div className="form-group" style={{ marginBottom: '1.2rem' }}>
+            <label className="form-label">아이콘 URL (선택)</label>
+            <div className="toss-input-container"><input className="toss-input" value={f.logoUrl || ''} onChange={e => setF({...f, logoUrl: e.target.value})} placeholder="https://... 또는 /assets/..." /></div>
+          </div>
         </div>
-        <div className="form-group" style={{ marginBottom: '1.2rem' }}>
-          <label className="form-label">아이콘 URL (선택)</label>
-          <div className="toss-input-container"><input className="toss-input" value={f.logoUrl || ''} onChange={e => setF({...f, logoUrl: e.target.value})} placeholder="https://... 또는 /assets/..." /></div>
-        </div>
-        <div className="btn-group">
-          <button className="btn-base btn-grey" onClick={() => setModal({ type: null })}>취소</button>
-          <button className="btn-base btn-blue" onClick={() => onSave(f)}>저장</button>
+
+        <div className="modal-footer">
+          <div className="btn-group">
+            <button className="btn-base btn-grey" onClick={() => setModal({ type: null })}>취소</button>
+            <button className="btn-base btn-blue" onClick={() => onSave(f)}>저장</button>
+          </div>
         </div>
       </motion.div>
     </div>
@@ -400,11 +488,29 @@ export default function App() {
     setViewDate(nextDate);
   };
 
+  const navigateYear = (step) => {
+    setViewDate({ ...viewDate, year: viewDate.year + step });
+  };
+
   const executeClone = () => {
     const { target, source } = clonePrompt;
     setData(prev => {
-      const clone = (list) => list.filter(i => i.year === source.year && i.month === source.month).map(i => ({ ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month }));
-      return { incomes: [...prev.incomes, ...clone(prev.incomes)], expenses: [...prev.expenses, ...clone(prev.expenses)], loans: [...prev.loans, ...clone(prev.loans)] };
+      const clone = (list, sector) => list.filter(i => i.year === source.year && i.month === source.month).map(i => {
+        let extra = {};
+        if (sector === 'loans') {
+          const snap = getLoanSnapshot(i, source.year, source.month);
+          extra = {
+            manualAmount: i.inputMode === 'manual' ? i.manualAmount : snap.monthlyPayment,
+            manualBalance: i.inputMode === 'manual' ? Math.max(0, i.manualBalance - i.manualAmount) : Math.max(0, snap.remainingBalance - snap.monthlyPayment)
+          };
+        }
+        return { ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month, ...extra };
+      });
+      return { 
+        incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')], 
+        expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')], 
+        loans: [...prev.loans, ...clone(prev.loans, 'loans')] 
+      };
     });
     setClonePrompt({ isOpen: false, target: null, source: null });
   };
@@ -416,8 +522,22 @@ export default function App() {
     if (exists && !window.confirm("현재 달에 이미 데이터가 있습니다. 덮어쓸까요?")) return;
     const target = { year: viewDate.year, month: viewDate.month }, source = { year: py, month: pm };
     setData(prev => {
-      const clone = (list) => list.filter(i => i.year === source.year && i.month === source.month).map(i => ({ ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month }));
-      return { incomes: [...prev.incomes, ...clone(prev.incomes)], expenses: [...prev.expenses, ...clone(prev.expenses)], loans: [...prev.loans, ...clone(prev.loans)] };
+      const clone = (list, sector) => list.filter(i => i.year === source.year && i.month === source.month).map(i => {
+        let extra = {};
+        if (sector === 'loans') {
+          const snap = getLoanSnapshot(i, source.year, source.month);
+          extra = {
+            manualAmount: i.inputMode === 'manual' ? i.manualAmount : snap.monthlyPayment,
+            manualBalance: i.inputMode === 'manual' ? Math.max(0, i.manualBalance - i.manualAmount) : Math.max(0, snap.remainingBalance - snap.monthlyPayment)
+          };
+        }
+        return { ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month, ...extra };
+      });
+      return { 
+        incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')], 
+        expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')], 
+        loans: [...prev.loans, ...clone(prev.loans, 'loans')] 
+      };
     });
     alert("복사 완료");
   };
@@ -425,14 +545,20 @@ export default function App() {
   const totals = useMemo(() => {
     const cur = { incomes: data.incomes.filter(i => i.year === viewDate.year && i.month === viewDate.month), expenses: data.expenses.filter(i => i.year === viewDate.year && i.month === viewDate.month), loans: data.loans.filter(i => i.year === viewDate.year && i.month === viewDate.month) };
     const inc = cur.incomes.reduce((a,c) => a + c.amount, 0), exp = cur.expenses.reduce((a,c) => a + c.amount, 0);
-    const loan = cur.loans.reduce((acc, i) => {
-      const [sY, sM] = (i.startDate || "2000-01-01").split('-').map(Number);
-      const passed = (viewDate.year * 12 + viewDate.month) - (sY * 12 + (sM || 1));
-      const bal = calculateLoanBalance(i, Math.max(0, passed));
-      const mon = i.repaymentMethod === REPAYMENT.BULLET ? (passed === i.term - 1 ? i.principal + calculateInterestOnly(i.principal, i.rate) : calculateInterestOnly(i.principal, i.rate)) : calculateEMI(i.principal, i.rate, i.term);
-      return { monthly: acc.monthly + mon, balance: acc.balance + bal };
-    }, { monthly: 0, balance: 0 });
-    return { income: inc, expense: exp, loanMonthly: loan.monthly, loanBalance: loan.balance };
+    
+    let loanMonthlyTotal = 0;
+    let loanBalanceTotal = 0;
+    let loanPrincipalTotal = 0;
+
+    cur.loans.forEach(i => {
+      const snap = getLoanSnapshot(i, viewDate.year, viewDate.month);
+      loanMonthlyTotal += snap.monthlyPayment;
+      loanBalanceTotal += snap.remainingBalance;
+      loanPrincipalTotal += (i.principal || 0);
+    });
+
+    const progressTotal = loanPrincipalTotal ? Math.floor(((loanPrincipalTotal - loanBalanceTotal) / loanPrincipalTotal) * 100) : 0;
+    return { income: inc, expense: exp, loanMonthly: loanMonthlyTotal, loanBalance: loanBalanceTotal, loanProgress: progressTotal };
   }, [data, viewDate]);
 
   const yearlyTotals = useMemo(() => {
@@ -443,18 +569,29 @@ export default function App() {
     let loanSum = 0;
     for (let m = 1; m <= limitM; m++) {
       data.loans.filter(l => l.year === viewDate.year && l.month === m).forEach(l => {
-        loanSum += l.repaymentMethod === REPAYMENT.BULLET ? calculateInterestOnly(l.principal, l.rate) : calculateEMI(l.principal, l.rate, l.term);
+        const snap = getLoanSnapshot(l, viewDate.year, m);
+        loanSum += snap.monthlyPayment;
       });
     }
     return { income: incSum, expense: expSum, loan: loanSum };
   }, [data, viewDate.year]);
 
+  const saveItem = (i) => {
+    setData(prev => {
+      let list = [...prev[modal.sector]];
+      if (modal.type === 'edit') list = list.map(x => x.id === i.id ? i : x);
+      else list.push({ ...i, id: Date.now().toString(), year: viewDate.year, month: viewDate.month });
+      return { ...prev, [modal.sector]: list };
+    });
+    setModal({ type: null });
+  };
+
   return (
     <div className="app-layout">
-      <header className="main-header"><div className="header-inner"><div className="brand-logo" onClick={() => setActiveTab('home')}><img src="/assets/logo.png" alt="FLOW" style={{ height: '20px', display: 'block' }} /></div><button className="settings-pill" onClick={() => setIsSettingsOpen(true)}><Settings size={18} /> 설정</button></div></header>
+      <header className="main-header"><div className="header-inner"><div className="brand-logo" onClick={() => setActiveTab('home')}><img src="/assets/logo.png" alt="FLOW" /></div><button className="settings-pill" onClick={() => setIsSettingsOpen(true)}><Settings size={18} /> 설정</button></div></header>
       <div className="app-container">
         <main style={{ paddingBottom: '40px' }}>
-          {activeTab === 'home' && <HomeView viewDate={viewDate} totals={totals} yearlyTotals={yearlyTotals} navigateMonth={navigateMonth} navigateYear={e => setViewDate({...viewDate, year: viewDate.year + e})} onNavigate={setActiveTab} onCopy={manualCopyPrevious} />}
+          {activeTab === 'home' && <HomeView viewDate={viewDate} totals={totals} yearlyTotals={yearlyTotals} navigateMonth={navigateMonth} navigateYear={navigateYear} onNavigate={setActiveTab} onCopy={manualCopyPrevious} />}
           {activeTab === 'incomes' && <DetailTab title="수입" total={totals.income} items={data.incomes} viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'incomes', item: { amount: 0, day: 1 } })} onEdit={i => setModal({ type: 'edit', sector: 'incomes', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'incomes', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
           {activeTab === 'expenses' && <DetailTab title="고정지출" total={totals.expense} items={data.expenses} viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'expenses', item: { amount: 0, day: 1 } })} onEdit={i => setModal({ type: 'edit', sector: 'expenses', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'expenses', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
           {activeTab === 'loans' && <DetailTab title="대출" total={totals.loanMonthly} items={data.loans} isLoan viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
@@ -467,8 +604,19 @@ export default function App() {
         <NavItem label="대출" Icon={Wallet} active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} />
       </nav>
       <AnimatePresence>
-        {(modal.type === 'add' || modal.type === 'edit') && <ModalUI modal={modal} setModal={setModal} onSave={i => { setData(prev => { let list = [...prev[modal.sector]]; if(modal.type==='edit') list=list.map(x=>x.id===i.id?i:x); else list.push({...i, id: Date.now().toString(), year: viewDate.year, month: viewDate.month}); return {...prev, [modal.sector]: list}; }); setModal({type:null}); }} />}
-        {modal.type === 'delete_confirm' && <div className="modal-backdrop" onClick={() => setModal({type:null})}><motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box"><h3 style={{textAlign:'center',marginBottom:24,fontWeight:800}}>삭제하시겠습니까?</h3><div className="btn-group"><button className="btn-base btn-grey" onClick={()=>setModal({type:null})}>취소</button><button className="btn-base btn-red" onClick={()=>{setData(prev=>({...prev,[modal.sector]:prev[modal.sector].filter(x=>x.id!==modal.item.id)}));setModal({type:null});}}>삭제</button></div></motion.div></div>}
+        {modal.type === 'delete_confirm' ? (
+          <div className="modal-backdrop" onClick={() => setModal({type:null})}>
+            <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
+              <h3 style={{textAlign:'center',marginBottom:24,fontWeight:800}}>삭제하시겠습니까?</h3>
+              <div className="btn-group">
+                <button className="btn-base btn-grey" onClick={()=>setModal({type:null})}>취소</button>
+                <button className="btn-base btn-red" onClick={()=>{setData(prev=>({...prev,[modal.sector]:prev[modal.sector].filter(x=>x.id!==modal.item.id)}));setModal({type:null});}}>삭제</button>
+              </div>
+            </motion.div>
+          </div>
+        ) : (
+          modal.type && <ModalUI modal={modal} onSave={saveItem} setModal={setModal} viewDate={viewDate} />
+        )}
         {isSettingsOpen && <SettingsModal data={data} setData={setData} onClose={()=>setIsSettingsOpen(false)} />}
         {clonePrompt.isOpen && <div className="modal-backdrop" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}><motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box"><h3 style={{textAlign:'center',marginBottom:16,fontWeight:800}}>데이터가 없습니다</h3><p style={{textAlign:'center',marginBottom:24,fontSize:'14px'}}>지난달 내역을 가져올까요?</p><div className="btn-group"><button className="btn-base btn-grey" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>아니오</button><button className="btn-base btn-blue" onClick={executeClone}>가져오기</button></div></motion.div></div>}
       </AnimatePresence>
