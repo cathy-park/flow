@@ -501,17 +501,29 @@ export default function App() {
   const executeClone = () => {
     const { target, source } = clonePrompt;
     setData(prev => {
-      const clone = (list, sector) => list.filter(i => i.year === source.year && i.month === source.month).map(i => {
-        let extra = {};
-        if (sector === 'loans') {
-          const snap = getLoanSnapshot(i, source.year, source.month);
-          extra = {
-            manualAmount: i.inputMode === 'manual' ? i.manualAmount : snap.monthlyPayment,
-            manualBalance: i.inputMode === 'manual' ? Math.max(0, i.manualBalance - i.manualAmount) : Math.max(0, snap.remainingBalance - snap.monthlyPayment)
-          };
-        }
-        return { ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month, ...extra };
-      });
+      const clone = (list, sector) => {
+        const sourceItems = list.filter(i => i.year === source.year && i.month === source.month);
+        const targetItems = list.filter(i => i.year === target.year && i.month === target.month);
+
+        return sourceItems
+          .filter(si => !targetItems.some(ti => {
+            if (sector === 'incomes') return ti.source === si.source && ti.provider === si.provider;
+            if (sector === 'expenses') return ti.name === si.name && ti.provider === si.provider;
+            if (sector === 'loans') return ti.product === si.product && ti.provider === si.provider;
+            return false;
+          }))
+          .map(i => {
+            let extra = {};
+            if (sector === 'loans') {
+              const snap = getLoanSnapshot(i, source.year, source.month);
+              extra = {
+                manualAmount: i.inputMode === 'manual' ? i.manualAmount : snap.monthlyPayment,
+                manualBalance: i.inputMode === 'manual' ? Math.max(0, i.manualBalance - i.manualAmount) : Math.max(0, snap.remainingBalance - snap.monthlyPayment)
+              };
+            }
+            return { ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month, ...extra };
+          });
+      };
       return { 
         incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')], 
         expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')], 
@@ -524,28 +536,55 @@ export default function App() {
   const manualCopyPrevious = () => {
     let pm = viewDate.month - 1, py = viewDate.year;
     if (pm < 1) { pm = 12; py--; }
-    const exists = (data.incomes.some(i => i.year === viewDate.year && i.month === viewDate.month) || data.expenses.some(i => i.year === viewDate.year && i.month === viewDate.month) || data.loans.some(i => i.year === viewDate.year && i.month === viewDate.month));
-    if (exists && !window.confirm("현재 달에 이미 데이터가 있습니다. 덮어쓸까요?")) return;
+    
     const target = { year: viewDate.year, month: viewDate.month }, source = { year: py, month: pm };
+    let importedCount = 0;
+
     setData(prev => {
-      const clone = (list, sector) => list.filter(i => i.year === source.year && i.month === source.month).map(i => {
-        let extra = {};
-        if (sector === 'loans') {
-          const snap = getLoanSnapshot(i, source.year, source.month);
-          extra = {
-            manualAmount: i.inputMode === 'manual' ? i.manualAmount : snap.monthlyPayment,
-            manualBalance: i.inputMode === 'manual' ? Math.max(0, i.manualBalance - i.manualAmount) : Math.max(0, snap.remainingBalance - snap.monthlyPayment)
-          };
-        }
-        return { ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month, ...extra };
-      });
+      const clone = (list, sector) => {
+        const sourceItems = list.filter(i => i.year === source.year && i.month === source.month);
+        const targetItems = list.filter(i => i.year === target.year && i.month === target.month);
+
+        const newItems = sourceItems
+          .filter(si => !targetItems.some(ti => {
+            if (sector === 'incomes') return ti.source === si.source && ti.provider === si.provider;
+            if (sector === 'expenses') return ti.name === si.name && ti.provider === si.provider;
+            if (sector === 'loans') return ti.product === si.product && ti.provider === si.provider;
+            return false;
+          }))
+          .map(i => {
+            let extra = {};
+            if (sector === 'loans') {
+              const snap = getLoanSnapshot(i, source.year, source.month);
+              extra = {
+                manualAmount: i.inputMode === 'manual' ? i.manualAmount : snap.monthlyPayment,
+                manualBalance: i.inputMode === 'manual' ? Math.max(0, i.manualBalance - i.manualAmount) : Math.max(0, snap.remainingBalance - snap.monthlyPayment)
+              };
+            }
+            return { ...i, id: (Date.now() + Math.random()).toString(), year: target.year, month: target.month, ...extra };
+          });
+        
+        importedCount += newItems.length;
+        return newItems;
+      };
+
+      const newIncomes = clone(prev.incomes, 'incomes');
+      const newExpenses = clone(prev.expenses, 'expenses');
+      const newLoans = clone(prev.loans, 'loans');
+
+      if (importedCount === 0) {
+        alert("가져올 수 있는 새로운 항목이 없습니다 (이미 중복됨)");
+        return prev;
+      }
+
       return { 
-        incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')], 
-        expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')], 
-        loans: [...prev.loans, ...clone(prev.loans, 'loans')] 
+        incomes: [...prev.incomes, ...newIncomes], 
+        expenses: [...prev.expenses, ...newExpenses], 
+        loans: [...prev.loans, ...newLoans] 
       };
     });
-    alert("복사 완료");
+
+    if (importedCount > 0) alert(`${importedCount}개의 항목을 가져왔습니다.`);
   };
 
   const totals = useMemo(() => {
