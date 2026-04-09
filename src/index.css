@@ -180,6 +180,7 @@ body {
 .card-internal-header > *:last-child { justify-self: end; }
 .home-header-v2 { display: flex !important; justify-content: space-between !important; grid-template-columns: none !important; }
 .home-header-v2 .card-date-nav { font-size: 15px; }
+.yearly-summary-section .card-date-nav { font-size: 15px; }
 
 .summary-row {
   display: flex;
@@ -205,7 +206,7 @@ body {
 .summary-header { display: flex; justify-content: space-between; align-items: flex-start; }
 .summary-label { font-size: 11px; font-weight: 700; color: var(--toss-text-sub); margin-bottom: -1px; }
 .summary-amount { font-size: 19px; font-weight: 900; line-height: 1.2; letter-spacing: -0.4px; }
-.summary-subtext { font-size: 10px; color: var(--toss-text-sub); opacity: 0.6; margin-top: 2px; }
+.summary-subtext { font-size: 11px; color: #8b95a1; margin-top: 2px; }
 
 .loan-progress-container { display: flex; align-items: center; gap: 6px; width: 85%; margin-top: 6px; }
 .progress-bar-bg { width: 100%; height: 6px; background: var(--toss-grey-150); border-radius: 3px; overflow: hidden; position: relative; }
