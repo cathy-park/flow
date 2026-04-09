@@ -607,10 +607,14 @@ export default function App() {
         {modal.type === 'delete_confirm' ? (
           <div className="modal-backdrop" onClick={() => setModal({type:null})}>
             <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
-              <h3 style={{textAlign:'center',marginBottom:24,fontWeight:800}}>삭제하시겠습니까?</h3>
-              <div className="btn-group">
-                <button className="btn-base btn-grey" onClick={()=>setModal({type:null})}>취소</button>
-                <button className="btn-base btn-red" onClick={()=>{setData(prev=>({...prev,[modal.sector]:prev[modal.sector].filter(x=>x.id!==modal.item.id)}));setModal({type:null});}}>삭제</button>
+              <div className="modal-header">
+                <h3 className="modal-title" style={{textAlign:'center'}}>삭제하시겠습니까?</h3>
+              </div>
+              <div className="modal-footer">
+                <div className="btn-group">
+                  <button className="btn-base btn-grey" onClick={()=>setModal({type:null})}>취소</button>
+                  <button className="btn-base btn-red" onClick={()=>{setData(prev=>({...prev,[modal.sector]:prev[modal.sector].filter(x=>x.id!==modal.item.id)}));setModal({type:null});}}>삭제</button>
+                </div>
               </div>
             </motion.div>
           </div>
@@ -618,7 +622,24 @@ export default function App() {
           modal.type && <ModalUI modal={modal} onSave={saveItem} setModal={setModal} viewDate={viewDate} />
         )}
         {isSettingsOpen && <SettingsModal data={data} setData={setData} onClose={()=>setIsSettingsOpen(false)} />}
-        {clonePrompt.isOpen && <div className="modal-backdrop" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}><motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box"><h3 style={{textAlign:'center',marginBottom:16,fontWeight:800}}>데이터가 없습니다</h3><p style={{textAlign:'center',marginBottom:24,fontSize:'14px'}}>지난달 내역을 가져올까요?</p><div className="btn-group"><button className="btn-base btn-grey" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>아니오</button><button className="btn-base btn-blue" onClick={executeClone}>가져오기</button></div></motion.div></div>}
+        {clonePrompt.isOpen && (
+          <div className="modal-backdrop" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>
+            <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
+              <div className="modal-header">
+                <h3 className="modal-title" style={{textAlign:'center'}}>데이터가 없습니다</h3>
+              </div>
+              <div className="modal-body" style={{ paddingBottom: '1.5rem' }}>
+                <p style={{textAlign:'center',fontSize:'14px',margin:0}}>지난달 내역을 가져올까요?</p>
+              </div>
+              <div className="modal-footer">
+                <div className="btn-group">
+                  <button className="btn-base btn-grey" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>아니오</button>
+                  <button className="btn-base btn-blue" onClick={executeClone}>가져오기</button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );

@@ -179,6 +179,7 @@ body {
 .card-internal-header > *:first-child { justify-self: start; }
 .card-internal-header > *:last-child { justify-self: end; }
 .home-header-v2 { display: flex !important; justify-content: space-between !important; grid-template-columns: none !important; }
+.home-header-v2 .card-date-nav { font-size: 15px; }
 
 .summary-row {
   display: flex;
