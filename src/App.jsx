@@ -210,7 +210,13 @@ function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear,
 }
 
 function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit, onDelete, activeMenuId, setActiveMenuId, isLoan }) {
-  const filteredItems = useMemo(() => items.filter(i => (!i.year || !i.month) || (i.year === viewDate.year && i.month === viewDate.month)), [items, viewDate]);
+  const filteredItems = useMemo(() => {
+    const filtered = items.filter(i => (!i.year || !i.month) || (i.year === viewDate.year && i.month === viewDate.month));
+    if (title === '고정지출') {
+      return [...filtered].sort((a, b) => (a.day || 0) - (b.day || 0));
+    }
+    return filtered;
+  }, [items, viewDate, title]);
   
   const summaryIcon = title === '수입' ? '/assets/income_bag.png' : (title === '고정지출' ? '/assets/wallet_wings.png' : '/assets/money_stack.png');
   const summaryColor = title === '수입' ? 'var(--toss-blue)' : (title === '고정지출' ? 'var(--toss-text-main)' : 'var(--toss-orange)');
