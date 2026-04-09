@@ -3,7 +3,7 @@ import {
   Home, TrendingUp, CreditCard, Wallet, 
   Settings, Plus, Trash2, 
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
-  X, Calendar
+  X, Calendar, Download, Upload
 } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 
@@ -454,11 +454,37 @@ function SettingsModal({ data, setData, onClose }) {
   };
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-box" onClick={e => e.stopPropagation()}>
-        <h3 className="modal-title">설정</h3>
-        <div className="form-group" style={{ marginBottom: '1rem' }}><button className="btn-base btn-grey" style={{ width: '100%' }} onClick={exportData}>데이터 다운로드</button></div>
-        <div className="form-group" style={{ marginBottom: '1rem' }}><label className="btn-base btn-blue" style={{ width: '100%', cursor: 'pointer', textAlign: 'center', display: 'block' }}>데이터 복구 <input type="file" hidden accept=".json" onChange={importData} /></label></div>
-        <button className="btn-base btn-grey" onClick={onClose} style={{ width: '100%', background: 'transparent' }}>닫기</button>
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+        animate={{ scale: 1, opacity: 1, y: 0 }} 
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="modal-box" 
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 className="modal-title">설정</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--toss-text-sub)' }}>
+            <X size={24} />
+          </button>
+        </div>
+        
+        <div className="modal-body" style={{ padding: '2rem 1.5rem' }}>
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <button className="btn-base btn-grey" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px' }} onClick={exportData}>
+              <Download size={18} /> 데이터 다운로드
+            </button>
+          </div>
+          <div className="form-group" style={{ marginBottom: '0' }}>
+            <label className="btn-base btn-blue" style={{ width: '100%', cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px' }}>
+              <Upload size={18} /> 데이터 복구 
+              <input type="file" hidden accept=".json" onChange={importData} />
+            </label>
+          </div>
+        </div>
+
+        <div className="modal-footer" style={{ borderTop: 'none', paddingTop: 0 }}>
+          <button className="btn-base" onClick={onClose} style={{ width: '100%', background: 'transparent', color: 'var(--toss-text-sub)', fontWeight: 600 }}>닫기</button>
+        </div>
       </motion.div>
     </div>
   );
