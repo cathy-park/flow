@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { 
-  Home, TrendingUp, CreditCard, Wallet, 
-  Settings, Plus, Trash2, 
+import {
+  Home, TrendingUp, CreditCard, Wallet,
+  Settings, Plus, Trash2,
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
   X, Calendar, Download, Upload, FileText
 } from 'lucide-react';
@@ -23,15 +23,15 @@ const REPAYMENT = {
 
 // --- CALCULATORS ---
 const getLoanSnapshot = (item, year, month) => {
-  const { 
-    principal = 0, rate = 0, term = 12, 
-    repaymentMethod = REPAYMENT.EQUAL, 
-    startDate = '', 
-    inputMode = 'auto', 
-    manualAmount = 0, 
-    manualBalance = 0 
+  const {
+    principal = 0, rate = 0, term = 12,
+    repaymentMethod = REPAYMENT.EQUAL,
+    startDate = '',
+    inputMode = 'auto',
+    manualAmount = 0,
+    manualBalance = 0
   } = item;
-  
+
   // Use today as fallback if startDate is invalid
   const dateStr = startDate || `${year}-${String(month).padStart(2, '0')}-01`;
   const [sY, sM] = dateStr.split('-').map(Number);
@@ -46,7 +46,7 @@ const getLoanSnapshot = (item, year, month) => {
 
   const monthlyRate = (rate || 0) / 12 / 100;
   let monthlyPayment = 0;
-  
+
   if (repaymentMethod === REPAYMENT.BULLET) {
     monthlyPayment = Math.floor(principal * monthlyRate);
   } else {
@@ -81,12 +81,12 @@ const getLoanSnapshot = (item, year, month) => {
   }
 
   const progress = principal ? Math.min(100, Math.floor(((principal - currentBalance) / principal) * 100)) : 0;
-  return { 
-    monthlyPayment, 
-    interest, 
-    principalPaid, 
-    remainingBalance: Math.max(0, currentBalance), 
-    progress 
+  return {
+    monthlyPayment,
+    interest,
+    principalPaid,
+    remainingBalance: Math.max(0, currentBalance),
+    progress
   };
 };
 
@@ -111,11 +111,11 @@ const INITIAL_DATA = {
 
 const ASSETS = {
   LOGO_BLUE_DOT: 'var(--toss-blue)',
-  ICON_INCOME: '/assets/income_bag.png',   
+  ICON_INCOME: '/assets/income_bag.png',
   ICON_EXPENSE: '/assets/wallet_wings.png',
   ICON_CARD: '/assets/card.png',
   ICON_TAX: 'https://img.icons8.com/color/96/tax.png',
-  ICON_LOAN: '/assets/money_stack.png'    
+  ICON_LOAN: '/assets/money_stack.png'
 };
 
 // --- COMPONENTS ---
@@ -179,12 +179,12 @@ function SwipeableItem({ children, onEdit, onDelete }) {
           <span>삭제</span>
         </button>
       </div>
-      <motion.div 
-        drag="x" 
-        dragConstraints={{ left: -140, right: 0 }} 
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: -140, right: 0 }}
         dragElastic={0.1}
-        animate={controls} 
-        onDragEnd={onDragEnd} 
+        animate={controls}
+        onDragEnd={onDragEnd}
         className="swipe-content-wrapper"
       >
         {children}
@@ -206,16 +206,15 @@ function MonthlyYearlyGraph({ data, currentMonth, type }) {
           return (
             <div key={month} className="graph-column">
               <div className="graph-bar-wrapper">
-                <motion.div 
+                <motion.div
                   initial={{ height: 0 }}
                   animate={{ height: `${height}px` }}
-                  className={`graph-bar ${
-                    isActive 
-                      ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : (type === 'expense' ? 'active-expense' : (type === 'loan' ? 'active-loan' : 'active')))) 
-                      : (month < currentMonth 
-                          ? (type === 'card' ? 'past-card' : (type === 'tax' ? 'past-tax' : (type === 'expense' ? 'past-expense' : (type === 'loan' ? 'past-loan' : 'past')))) 
-                          : '')
-                  }`}
+                  className={`graph-bar ${isActive
+                      ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : (type === 'expense' ? 'active-expense' : (type === 'loan' ? 'active-loan' : 'active'))))
+                      : (month < currentMonth
+                        ? (type === 'card' ? 'past-card' : (type === 'tax' ? 'past-tax' : (type === 'expense' ? 'past-expense' : (type === 'loan' ? 'past-loan' : 'past'))))
+                        : '')
+                    }`}
                 />
               </div>
               <span className={`graph-month-label ${isActive ? 'active' : ''}`}>{month}월</span>
@@ -236,41 +235,41 @@ function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear,
           <button className="btn-clone-text" onClick={onCopy}>가져오기</button>
         </div>
 
-        <HomeSummaryRow 
-          icon="/assets/income_bag.png" 
-          label="이번 달 총 수입" 
-          amount={totals.income} 
+        <HomeSummaryRow
+          icon="/assets/income_bag.png"
+          label="이번 달 수입"
+          amount={totals.income}
           color="var(--toss-blue)"
-          onClick={() => onNavigate('incomes')} 
+          onClick={() => onNavigate('incomes')}
         />
-        <HomeSummaryRow 
-          icon="/assets/card.png" 
-          label="이번 달 총 카드 지출" 
-          amount={totals.cardExpense} 
+        <HomeSummaryRow
+          icon="/assets/card.png"
+          label="이번 달 카드 지출"
+          amount={totals.cardExpense}
           color="var(--toss-green)"
-          onClick={() => onNavigate('cardExpenses')} 
+          onClick={() => onNavigate('cardExpenses')}
         />
-        <HomeSummaryRow 
-          icon="/assets/wallet_wings.png" 
-          label="이번 달 총 고정지출" 
-          amount={totals.expense} 
+        <HomeSummaryRow
+          icon="/assets/wallet_wings.png"
+          label="이번 달 고정지출"
+          amount={totals.expense}
           color="var(--toss-text-main)"
-          onClick={() => onNavigate('expenses')} 
+          onClick={() => onNavigate('expenses')}
         />
-        <HomeSummaryRow 
-          icon="https://img.icons8.com/color/96/tax.png" 
-          label="이번 달 총 세금" 
-          amount={totals.tax} 
+        <HomeSummaryRow
+          icon="https://img.icons8.com/color/96/tax.png"
+          label="이번 달 세금"
+          amount={totals.tax}
           color="var(--toss-purple)"
-          onClick={() => onNavigate('taxes')} 
+          onClick={() => onNavigate('taxes')}
         />
-        <HomeSummaryRow 
-          icon="/assets/money_stack.png" 
-          label="이번 달 대출 납입" 
-          amount={totals.loanMonthly} 
+        <HomeSummaryRow
+          icon="/assets/money_stack.png"
+          label="이번 달 대출 납입"
+          amount={totals.loanMonthly}
           color="var(--toss-orange)"
           subText={`전체 잔액 ${formatCurrency(totals.loanBalance)}원`}
-          onClick={() => onNavigate('loans')} 
+          onClick={() => onNavigate('loans')}
         />
       </div>
 
@@ -298,10 +297,10 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
     }
     return filtered;
   }, [items, viewDate, title]);
-  
+
   const summaryIcon = title === '수입' ? '/assets/income_bag.png' : (title === '고정지출' ? '/assets/wallet_wings.png' : (title === '카드지출' ? '/assets/card.png' : (title === '세금' ? 'https://img.icons8.com/color/96/tax.png' : '/assets/money_stack.png')));
   const summaryColor = title === '수입' ? 'var(--toss-blue)' : (title === '고정지출' ? 'var(--toss-text-main)' : (title === '카드지출' ? 'var(--toss-green)' : (title === '세금' ? 'var(--toss-purple)' : 'var(--toss-orange)')));
-  
+
   const loanSnap = isLoan ? filteredItems.reduce((acc, i) => {
     const snap = getLoanSnapshot(i, viewDate.year, viewDate.month);
     return { balance: acc.balance + snap.remainingBalance, principal: acc.principal + (i.principal || 0) };
@@ -312,10 +311,10 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
   return (
     <>
       {yearlyData && (
-        <MonthlyYearlyGraph 
-          data={yearlyData} 
-          currentMonth={viewDate.month} 
-          type={title === '카드지출' ? 'card' : (title === '세금' ? 'tax' : (title === '고정지출' ? 'expense' : (title === '대출' ? 'loan' : 'income')))} 
+        <MonthlyYearlyGraph
+          data={yearlyData}
+          currentMonth={viewDate.month}
+          type={title === '카드지출' ? 'card' : (title === '세금' ? 'tax' : (title === '고정지출' ? 'expense' : (title === '대출' ? 'loan' : 'income')))}
         />
       )}
       <div className="toss-card summary-card-v2">
@@ -367,7 +366,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
                     </div>
                   )}
                 </div>
-                
+
                 {isLoan && (() => {
                   const snap = getLoanSnapshot(item, viewDate.year, viewDate.month);
                   return (
@@ -375,18 +374,18 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
                       <div className="loan-item-amount-row">
                         <Price amount={snap.monthlyPayment} className="loan-monthly-price" />
                       </div>
-                      
-                        <div className="loan-progress-detail">
-                          <div className="loan-status-text">
-                            {item.repaymentMethod === REPAYMENT.EQUAL ? '원리금균등' : '만기일시'} 상환 중 <span className="progress-highlight">{snap.progress}%</span>
-                          </div>
-                          <div className="progress-bar-bg">
-                            <div className="progress-bar-fill" style={{ width: `${snap.progress}%`, backgroundColor: 'var(--toss-orange)' }}></div>
-                          </div>
-                          <div className="loan-remaining-balance">
-                            잔액: <Price amount={snap.remainingBalance} />
-                          </div>
+
+                      <div className="loan-progress-detail">
+                        <div className="loan-status-text">
+                          {item.repaymentMethod === REPAYMENT.EQUAL ? '원리금균등' : '만기일시'} 상환 중 <span className="progress-highlight">{snap.progress}%</span>
                         </div>
+                        <div className="progress-bar-bg">
+                          <div className="progress-bar-fill" style={{ width: `${snap.progress}%`, backgroundColor: 'var(--toss-orange)' }}></div>
+                        </div>
+                        <div className="loan-remaining-balance">
+                          잔액: <Price amount={snap.remainingBalance} />
+                        </div>
+                      </div>
                     </div>
                   );
                 })()}
@@ -400,17 +399,17 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
 }
 
 function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
-  const [f, setF] = useState({ 
+  const [f, setF] = useState({
     inputMode: 'auto',
     manualAmount: 0,
     manualBalance: 0,
-    ...modal.item 
+    ...modal.item
   });
-  
+
   const [amtStr, setAmtStr] = useState(formatCurrency(f.amount || f.manualAmount || 0));
   const [pStr, setPStr] = useState(formatCurrency(f.principal || 0));
   const [balStr, setBalStr] = useState(formatCurrency(f.manualBalance || 0));
-  
+
   const isLoan = modal.sector === 'loans';
 
   const handleAmt = (v) => {
@@ -429,7 +428,7 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
     setBalStr(n > 0 ? formatCurrency(n) : '');
     setF({ ...f, manualBalance: n });
   };
-  
+
   const handleNameChange = (newName) => {
     const field = isLoan ? 'product' : (modal.sector === 'incomes' ? 'source' : 'name');
     const nextF = { ...f, [field]: newName };
@@ -460,14 +459,14 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
         <div className="modal-header">
           <h3 className="modal-title">{modal.type === 'add' ? '내역 추가' : '수정하기'}</h3>
         </div>
-        
+
         <div className="modal-body">
           {isLoan && (
             <div className="form-group" style={{ marginBottom: '1.2rem' }}>
               <label className="form-label">입력 방식</label>
               <div className="repayment-selector">
-                <div className={`repayment-option ${f.inputMode === 'auto' ? 'active' : ''}`} onClick={() => setF({...f, inputMode: 'auto'})}>🤖 자동 계산</div>
-                <div className={`repayment-option ${f.inputMode === 'manual' ? 'active' : ''}`} onClick={() => setF({...f, inputMode: 'manual'})}>✍️ 수동 기록</div>
+                <div className={`repayment-option ${f.inputMode === 'auto' ? 'active' : ''}`} onClick={() => setF({ ...f, inputMode: 'auto' })}>🤖 자동 계산</div>
+                <div className={`repayment-option ${f.inputMode === 'manual' ? 'active' : ''}`} onClick={() => setF({ ...f, inputMode: 'manual' })}>✍️ 수동 기록</div>
               </div>
             </div>
           )}
@@ -475,12 +474,12 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
           <div className="form-group" style={{ marginBottom: '1.2rem' }}>
             <label className="form-label">{isLoan ? '대출 상품명' : '항목명'}</label>
             <div className="toss-input-container">
-              <input 
-                className="toss-input" 
-                value={f.source || f.name || f.product || ''} 
-                onChange={e => handleNameChange(e.target.value)} 
-                placeholder="어디서 발생했나요?" 
-                autoFocus 
+              <input
+                className="toss-input"
+                value={f.source || f.name || f.product || ''}
+                onChange={e => handleNameChange(e.target.value)}
+                placeholder="어디서 발생했나요?"
+                autoFocus
               />
             </div>
           </div>
@@ -488,18 +487,18 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
           {isLoan ? (
             <>
               <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">총 대출 원금</label><div className="toss-input-container"><input className="toss-input" value={pStr} onChange={e => handleP(e.target.value)} placeholder="0" /></div></div>
-              
+
               {f.inputMode === 'auto' ? (
                 <>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">연 이율 (%)</label><div className="toss-input-container"><input className="toss-input" type="number" step="0.1" value={f.rate || ''} onChange={e => setF({...f, rate: parseFloat(e.target.value) || 0})} /></div></div>
-                    <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">기간 (개월)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.term || ''} onChange={e => setF({...f, term: parseInt(e.target.value) || 12})} /></div></div>
+                    <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">연 이율 (%)</label><div className="toss-input-container"><input className="toss-input" type="number" step="0.1" value={f.rate || ''} onChange={e => setF({ ...f, rate: parseFloat(e.target.value) || 0 })} /></div></div>
+                    <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">기간 (개월)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.term || ''} onChange={e => setF({ ...f, term: parseInt(e.target.value) || 12 })} /></div></div>
                   </div>
                   <div className="form-group" style={{ marginBottom: '1.2rem' }}>
                     <label className="form-label">상환 방식</label>
                     <div className="repayment-selector">
-                      <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.EQUAL ? 'active' : ''}`} onClick={() => setF({...f, repaymentMethod: REPAYMENT.EQUAL})}>원리금 균등</div>
-                      <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.BULLET ? 'active' : ''}`} onClick={() => setF({...f, repaymentMethod: REPAYMENT.BULLET})}>만기 일시</div>
+                      <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.EQUAL ? 'active' : ''}`} onClick={() => setF({ ...f, repaymentMethod: REPAYMENT.EQUAL })}>원리금 균등</div>
+                      <div className={`repayment-option ${f.repaymentMethod === REPAYMENT.BULLET ? 'active' : ''}`} onClick={() => setF({ ...f, repaymentMethod: REPAYMENT.BULLET })}>만기 일시</div>
                     </div>
                   </div>
                   <div className="preview-box-enhanced">
@@ -509,7 +508,7 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
                       <span className="preview-sub-v2">{f.repaymentMethod === REPAYMENT.BULLET ? '(이자만)' : '(원금+이자)'}</span>
                     </div>
                     <div className="preview-chart-mock">
-                      {[3,5,4,6,5,7,6,8,7,9,8,10,9,11,10].map((h, i) => (
+                      {[3, 5, 4, 6, 5, 7, 6, 8, 7, 9, 8, 10, 9, 11, 10].map((h, i) => (
                         <div key={i} className={`chart-bar ${i > 10 ? 'active' : ''}`} style={{ height: `${h * 10}%` }} />
                       ))}
                     </div>
@@ -526,7 +525,7 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
                       </div>
                     )}
                   </div>
-                  <div className="form-group" style={{ marginBottom: '1.2rem', marginTop: '1.2rem' }}><label className="form-label">시작 날짜</label><div className="toss-input-container" style={{ position: 'relative' }}><input className="toss-input" type="date" value={f.startDate || ''} onChange={e => setF({...f, startDate: e.target.value})} /><div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#111' }}><Calendar size={18} strokeWidth={2.5} /></div></div></div>
+                  <div className="form-group" style={{ marginBottom: '1.2rem', marginTop: '1.2rem' }}><label className="form-label">시작 날짜</label><div className="toss-input-container" style={{ position: 'relative' }}><input className="toss-input" type="date" value={f.startDate || ''} onChange={e => setF({ ...f, startDate: e.target.value })} /><div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#111' }}><Calendar size={18} strokeWidth={2.5} /></div></div></div>
                 </>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -540,13 +539,13 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">날짜 (일)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.day || ''} onChange={e => setF({...f, day: parseInt(e.target.value) || 1})} /></div></div>
-            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금융기관/카드</label><div className="toss-input-container"><input className="toss-input" value={f.provider || ''} onChange={e => setF({...f, provider: e.target.value})} /></div></div>
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">날짜 (일)</label><div className="toss-input-container"><input className="toss-input" type="number" value={f.day || ''} onChange={e => setF({ ...f, day: parseInt(e.target.value) || 1 })} /></div></div>
+            <div className="form-group" style={{ marginBottom: '1.2rem' }}><label className="form-label">금융기관/카드</label><div className="toss-input-container"><input className="toss-input" value={f.provider || ''} onChange={e => setF({ ...f, provider: e.target.value })} /></div></div>
           </div>
-          
+
           <div className="form-group" style={{ marginBottom: '1.2rem' }}>
             <label className="form-label">아이콘 URL (선택)</label>
-            <div className="toss-input-container"><input className="toss-input" value={f.logoUrl || ''} onChange={e => setF({...f, logoUrl: e.target.value})} placeholder="https://... 또는 /assets/..." /></div>
+            <div className="toss-input-container"><input className="toss-input" value={f.logoUrl || ''} onChange={e => setF({ ...f, logoUrl: e.target.value })} placeholder="https://... 또는 /assets/..." /></div>
           </div>
         </div>
 
@@ -584,11 +583,11 @@ function SettingsModal({ data, setData, onClose }) {
   };
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }} 
-        animate={{ scale: 1, opacity: 1, y: 0 }} 
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="modal-box" 
+        className="modal-box"
         onClick={e => e.stopPropagation()}
       >
         <div className="modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -597,7 +596,7 @@ function SettingsModal({ data, setData, onClose }) {
             <X size={24} />
           </button>
         </div>
-        
+
         <div className="modal-body" style={{ padding: '2rem 1.5rem' }}>
           <div className="form-group" style={{ marginBottom: '1rem' }}>
             <button className="btn-base btn-grey" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px' }} onClick={exportData}>
@@ -606,7 +605,7 @@ function SettingsModal({ data, setData, onClose }) {
           </div>
           <div className="form-group" style={{ marginBottom: '0' }}>
             <label className="btn-base btn-blue" style={{ width: '100%', cursor: 'pointer', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '16px' }}>
-              <Upload size={18} /> 데이터 복구 
+              <Upload size={18} /> 데이터 복구
               <input type="file" hidden accept=".json" onChange={importData} />
             </label>
           </div>
@@ -638,7 +637,7 @@ export default function App() {
   const [clonePrompt, setClonePrompt] = useState({ isOpen: false, target: null, source: null });
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  
+
   const nameToIconMap = useMemo(() => {
     const map = {};
     const categories = ['incomes', 'expenses', 'cardExpenses', 'taxes', 'loans'];
@@ -696,12 +695,12 @@ export default function App() {
             return { ...i, id: Date.now() + Math.random().toString(), year: target.year, month: target.month, ...extra };
           });
       };
-      return { 
-        incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')], 
-        expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')], 
+      return {
+        incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')],
+        expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')],
         cardExpenses: [...(prev.cardExpenses || []), ...clone(prev.cardExpenses || [], 'cardExpenses')],
         taxes: [...(prev.taxes || []), ...clone(prev.taxes || [], 'taxes')],
-        loans: [...prev.loans, ...clone(prev.loans, 'loans')] 
+        loans: [...prev.loans, ...clone(prev.loans, 'loans')]
       };
     });
     setClonePrompt({ isOpen: false, target: null, source: null });
@@ -710,7 +709,7 @@ export default function App() {
   const manualCopyPrevious = () => {
     let pm = viewDate.month - 1, py = viewDate.year;
     if (pm < 1) { pm = 12; py--; }
-    
+
     const target = { year: viewDate.year, month: viewDate.month }, source = { year: py, month: pm };
     let importedCount = 0;
 
@@ -739,7 +738,7 @@ export default function App() {
             }
             return { ...i, id: (Date.now() + Math.random()).toString(), year: target.year, month: target.month, ...extra };
           });
-        
+
         importedCount += newItems.length;
         return newItems;
       };
@@ -755,12 +754,12 @@ export default function App() {
         return prev;
       }
 
-      return { 
-        incomes: [...prev.incomes, ...newIncomes], 
-        expenses: [...prev.expenses, ...newExpenses], 
+      return {
+        incomes: [...prev.incomes, ...newIncomes],
+        expenses: [...prev.expenses, ...newExpenses],
         cardExpenses: [...(prev.cardExpenses || []), ...newCardExpenses],
         taxes: [...(prev.taxes || []), ...newTaxes],
-        loans: [...prev.loans, ...newLoans] 
+        loans: [...prev.loans, ...newLoans]
       };
     });
 
@@ -769,8 +768,8 @@ export default function App() {
 
   const totals = useMemo(() => {
     const cur = { incomes: data.incomes.filter(i => i.year === viewDate.year && i.month === viewDate.month), expenses: data.expenses.filter(i => i.year === viewDate.year && i.month === viewDate.month), cardExpenses: (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month === viewDate.month), taxes: (data.taxes || []).filter(i => i.year === viewDate.year && i.month === viewDate.month), loans: data.loans.filter(i => i.year === viewDate.year && i.month === viewDate.month) };
-    const inc = cur.incomes.reduce((a,c) => a + c.amount, 0), exp = cur.expenses.reduce((a,c) => a + c.amount, 0), cardExp = cur.cardExpenses.reduce((a,c) => a + c.amount, 0), taxExp = cur.taxes.reduce((a,c) => a + c.amount, 0);
-    
+    const inc = cur.incomes.reduce((a, c) => a + c.amount, 0), exp = cur.expenses.reduce((a, c) => a + c.amount, 0), cardExp = cur.cardExpenses.reduce((a, c) => a + c.amount, 0), taxExp = cur.taxes.reduce((a, c) => a + c.amount, 0);
+
     let loanMonthlyTotal = 0;
     let loanBalanceTotal = 0;
     let loanPrincipalTotal = 0;
@@ -789,10 +788,10 @@ export default function App() {
   const yearlyTotals = useMemo(() => {
     const today = new Date(), tY = today.getFullYear(), tM = today.getMonth() + 1;
     let limitM = viewDate.year === tY ? tM : (viewDate.year < tY ? 12 : 0);
-    const incSum = data.incomes.filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
-    const expSum = data.expenses.filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
-    const cardSum = (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
-    const taxSum = (data.taxes || []).filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
+    const incSum = data.incomes.filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a, c) => a + c.amount, 0);
+    const expSum = data.expenses.filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a, c) => a + c.amount, 0);
+    const cardSum = (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a, c) => a + c.amount, 0);
+    const taxSum = (data.taxes || []).filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a, c) => a + c.amount, 0);
     let loanSum = 0;
     for (let m = 1; m <= limitM; m++) {
       data.loans.filter(l => l.year === viewDate.year && l.month === m).forEach(l => {
@@ -820,79 +819,79 @@ export default function App() {
         <main style={{ paddingBottom: '40px' }}>
           {activeTab === 'home' && <HomeView viewDate={viewDate} totals={totals} yearlyTotals={yearlyTotals} navigateMonth={navigateMonth} navigateYear={navigateYear} onNavigate={setActiveTab} onCopy={manualCopyPrevious} />}
           {activeTab === 'incomes' && (
-            <DetailTab 
-              title="수입" 
-              total={totals.income} 
-              items={data.incomes} 
-              viewDate={viewDate} 
-              navigateMonth={navigateMonth} 
-              onAdd={() => setModal({ type: 'add', sector: 'incomes', item: { amount: 0, day: 1 } })} 
-              onEdit={i => setModal({ type: 'edit', sector: 'incomes', item: i })} 
-              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'incomes', item: i }); setActiveMenuId(null); }} 
-              activeMenuId={activeMenuId} 
-              setActiveMenuId={setActiveMenuId} 
-              yearlyData={Array.from({ length: 12 }, (_, m) => data.incomes.filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
+            <DetailTab
+              title="수입"
+              total={totals.income}
+              items={data.incomes}
+              viewDate={viewDate}
+              navigateMonth={navigateMonth}
+              onAdd={() => setModal({ type: 'add', sector: 'incomes', item: { amount: 0, day: 1 } })}
+              onEdit={i => setModal({ type: 'edit', sector: 'incomes', item: i })}
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'incomes', item: i }); setActiveMenuId(null); }}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              yearlyData={Array.from({ length: 12 }, (_, m) => data.incomes.filter(i => i.year === viewDate.year && i.month === m + 1).reduce((a, c) => a + c.amount, 0))}
             />
           )}
           {activeTab === 'cardExpenses' && (
-            <DetailTab 
-              title="카드지출" 
-              total={totals.cardExpense} 
-              items={data.cardExpenses || []} 
-              viewDate={viewDate} 
-              navigateMonth={navigateMonth} 
-              onAdd={() => setModal({ type: 'add', sector: 'cardExpenses', item: { amount: 0, day: 1 } })} 
-              onEdit={i => setModal({ type: 'edit', sector: 'cardExpenses', item: i })} 
-              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'cardExpenses', item: i }); setActiveMenuId(null); }} 
-              activeMenuId={activeMenuId} 
-              setActiveMenuId={setActiveMenuId} 
-              yearlyData={Array.from({ length: 12 }, (_, m) => (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
+            <DetailTab
+              title="카드지출"
+              total={totals.cardExpense}
+              items={data.cardExpenses || []}
+              viewDate={viewDate}
+              navigateMonth={navigateMonth}
+              onAdd={() => setModal({ type: 'add', sector: 'cardExpenses', item: { amount: 0, day: 1 } })}
+              onEdit={i => setModal({ type: 'edit', sector: 'cardExpenses', item: i })}
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'cardExpenses', item: i }); setActiveMenuId(null); }}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              yearlyData={Array.from({ length: 12 }, (_, m) => (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month === m + 1).reduce((a, c) => a + c.amount, 0))}
             />
           )}
           {activeTab === 'expenses' && (
-            <DetailTab 
-              title="고정지출" 
-              total={totals.expense} 
-              items={data.expenses} 
-              viewDate={viewDate} 
-              navigateMonth={navigateMonth} 
-              onAdd={() => setModal({ type: 'add', sector: 'expenses', item: { amount: 0, day: 1 } })} 
-              onEdit={i => setModal({ type: 'edit', sector: 'expenses', item: i })} 
-              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'expenses', item: i }); setActiveMenuId(null); }} 
-              activeMenuId={activeMenuId} 
-              setActiveMenuId={setActiveMenuId} 
-              yearlyData={Array.from({ length: 12 }, (_, m) => data.expenses.filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
+            <DetailTab
+              title="고정지출"
+              total={totals.expense}
+              items={data.expenses}
+              viewDate={viewDate}
+              navigateMonth={navigateMonth}
+              onAdd={() => setModal({ type: 'add', sector: 'expenses', item: { amount: 0, day: 1 } })}
+              onEdit={i => setModal({ type: 'edit', sector: 'expenses', item: i })}
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'expenses', item: i }); setActiveMenuId(null); }}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              yearlyData={Array.from({ length: 12 }, (_, m) => data.expenses.filter(i => i.year === viewDate.year && i.month === m + 1).reduce((a, c) => a + c.amount, 0))}
             />
           )}
           {activeTab === 'taxes' && (
-            <DetailTab 
-              title="세금" 
-              total={totals.tax} 
-              items={data.taxes || []} 
-              viewDate={viewDate} 
-              navigateMonth={navigateMonth} 
-              onAdd={() => setModal({ type: 'add', sector: 'taxes', item: { amount: 0, day: 1 } })} 
-              onEdit={i => setModal({ type: 'edit', sector: 'taxes', item: i })} 
-              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'taxes', item: i }); setActiveMenuId(null); }} 
-              activeMenuId={activeMenuId} 
-              setActiveMenuId={setActiveMenuId} 
-              yearlyData={Array.from({ length: 12 }, (_, m) => (data.taxes || []).filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
+            <DetailTab
+              title="세금"
+              total={totals.tax}
+              items={data.taxes || []}
+              viewDate={viewDate}
+              navigateMonth={navigateMonth}
+              onAdd={() => setModal({ type: 'add', sector: 'taxes', item: { amount: 0, day: 1 } })}
+              onEdit={i => setModal({ type: 'edit', sector: 'taxes', item: i })}
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'taxes', item: i }); setActiveMenuId(null); }}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              yearlyData={Array.from({ length: 12 }, (_, m) => (data.taxes || []).filter(i => i.year === viewDate.year && i.month === m + 1).reduce((a, c) => a + c.amount, 0))}
             />
           )}
           {activeTab === 'loans' && (
-            <DetailTab 
-              title="대출" 
-              total={totals.loanMonthly} 
-              items={data.loans} 
-              isLoan 
-              viewDate={viewDate} 
-              navigateMonth={navigateMonth} 
-              onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} 
-              onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} 
-              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }} 
-              activeMenuId={activeMenuId} 
-              setActiveMenuId={setActiveMenuId} 
-              yearlyData={Array.from({ length: 12 }, (_, m) => data.loans.filter(l => l.year === viewDate.year && l.month === m+1).reduce((a, c) => a + getLoanSnapshot(c, viewDate.year, m+1).monthlyPayment, 0))}
+            <DetailTab
+              title="대출"
+              total={totals.loanMonthly}
+              items={data.loans}
+              isLoan
+              viewDate={viewDate}
+              navigateMonth={navigateMonth}
+              onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })}
+              onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })}
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }}
+              activeMenuId={activeMenuId}
+              setActiveMenuId={setActiveMenuId}
+              yearlyData={Array.from({ length: 12 }, (_, m) => data.loans.filter(l => l.year === viewDate.year && l.month === m + 1).reduce((a, c) => a + getLoanSnapshot(c, viewDate.year, m + 1).monthlyPayment, 0))}
             />
           )}
         </main>
@@ -907,15 +906,15 @@ export default function App() {
       </nav>
       <AnimatePresence>
         {modal.type === 'delete_confirm' && (
-          <div className="modal-backdrop" onClick={() => setModal({type:null})}>
-            <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
+          <div className="modal-backdrop" onClick={() => setModal({ type: null })}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-box">
               <div className="modal-header">
-                <h3 className="modal-title" style={{textAlign:'center'}}>삭제하시겠습니까?</h3>
+                <h3 className="modal-title" style={{ textAlign: 'center' }}>삭제하시겠습니까?</h3>
               </div>
               <div className="modal-footer">
                 <div className="btn-group">
-                  <button className="btn-base btn-grey" onClick={()=>setModal({type:null})}>취소</button>
-                  <button className="btn-base btn-red" onClick={()=>{setData(prev=>({...prev,[modal.sector]:prev[modal.sector].filter(x=>x.id!==modal.item.id)}));setModal({type:null});}}>삭제</button>
+                  <button className="btn-base btn-grey" onClick={() => setModal({ type: null })}>취소</button>
+                  <button className="btn-base btn-red" onClick={() => { setData(prev => ({ ...prev, [modal.sector]: prev[modal.sector].filter(x => x.id !== modal.item.id) })); setModal({ type: null }); }}>삭제</button>
                 </div>
               </div>
             </motion.div>
@@ -923,26 +922,26 @@ export default function App() {
         )}
         {isSettingsOpen && <SettingsModal data={data} setData={setData} onClose={() => setIsSettingsOpen(false)} />}
         {modal.type && modal.type !== 'delete_confirm' && (
-          <ModalUI 
-            modal={modal} 
-            onSave={saveItem} 
-            setModal={setModal} 
-            viewDate={viewDate} 
-            nameToIconMap={nameToIconMap} 
+          <ModalUI
+            modal={modal}
+            onSave={saveItem}
+            setModal={setModal}
+            viewDate={viewDate}
+            nameToIconMap={nameToIconMap}
           />
         )}
         {clonePrompt.isOpen && (
-          <div className="modal-backdrop" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>
-            <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
+          <div className="modal-backdrop" onClick={() => setClonePrompt({ ...clonePrompt, isOpen: false })}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="modal-box">
               <div className="modal-header">
-                <h3 className="modal-title" style={{textAlign:'center'}}>데이터가 없습니다</h3>
+                <h3 className="modal-title" style={{ textAlign: 'center' }}>데이터가 없습니다</h3>
               </div>
               <div className="modal-body" style={{ paddingBottom: '1.5rem' }}>
-                <p style={{textAlign:'center',fontSize:'14px',margin:0}}>지난달 내역을 가져올까요?</p>
+                <p style={{ textAlign: 'center', fontSize: '14px', margin: 0 }}>지난달 내역을 가져올까요?</p>
               </div>
               <div className="modal-footer">
                 <div className="btn-group">
-                  <button className="btn-base btn-grey" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>아니오</button>
+                  <button className="btn-base btn-grey" onClick={() => setClonePrompt({ ...clonePrompt, isOpen: false })}>아니오</button>
                   <button className="btn-base btn-blue" onClick={executeClone}>가져오기</button>
                 </div>
               </div>
