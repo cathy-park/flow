@@ -477,6 +477,22 @@ body {
   background: #CAB9F7; /* Pastel Purple */
 }
 
+.graph-bar.active-expense {
+  background: var(--toss-text-main);
+}
+
+.graph-bar.past-expense {
+  background: #CCD1D8; /* Pastel Grey */
+}
+
+.graph-bar.active-loan {
+  background: var(--toss-orange);
+}
+
+.graph-bar.past-loan {
+  background: #FFE2CC; /* Pastel Orange */
+}
+
 .graph-month-label {
   font-size: 9px;
   font-weight: 700;

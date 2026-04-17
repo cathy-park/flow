@@ -186,9 +186,9 @@ function MonthlyYearlyGraph({ data, currentMonth, type }) {
                   animate={{ height: `${height}px` }}
                   className={`graph-bar ${
                     isActive 
-                      ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : 'active')) 
+                      ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : (type === 'expense' ? 'active-expense' : (type === 'loan' ? 'active-loan' : 'active')))) 
                       : (month < currentMonth 
-                          ? (type === 'card' ? 'past-card' : (type === 'tax' ? 'past-tax' : 'past')) 
+                          ? (type === 'card' ? 'past-card' : (type === 'tax' ? 'past-tax' : (type === 'expense' ? 'past-expense' : (type === 'loan' ? 'past-loan' : 'past')))) 
                           : '')
                   }`}
                 />
@@ -290,7 +290,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
         <MonthlyYearlyGraph 
           data={yearlyData} 
           currentMonth={viewDate.month} 
-          type={title === '카드지출' ? 'card' : (title === '세금' ? 'tax' : 'income')} 
+          type={title === '카드지출' ? 'card' : (title === '세금' ? 'tax' : (title === '고정지출' ? 'expense' : (title === '대출' ? 'loan' : 'income')))} 
         />
       )}
       <div className="toss-card summary-card-v2">
@@ -811,6 +811,7 @@ export default function App() {
               onDelete={i => { setModal({ type: 'delete_confirm', sector: 'expenses', item: i }); setActiveMenuId(null); }} 
               activeMenuId={activeMenuId} 
               setActiveMenuId={setActiveMenuId} 
+              yearlyData={Array.from({ length: 12 }, (_, m) => data.expenses.filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
             />
           )}
           {activeTab === 'taxes' && (
@@ -828,7 +829,22 @@ export default function App() {
               yearlyData={Array.from({ length: 12 }, (_, m) => (data.taxes || []).filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
             />
           )}
-          {activeTab === 'loans' && <DetailTab title="대출" total={totals.loanMonthly} items={data.loans} isLoan viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
+          {activeTab === 'loans' && (
+            <DetailTab 
+              title="대출" 
+              total={totals.loanMonthly} 
+              items={data.loans} 
+              isLoan 
+              viewDate={viewDate} 
+              navigateMonth={navigateMonth} 
+              onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} 
+              onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} 
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }} 
+              activeMenuId={activeMenuId} 
+              setActiveMenuId={setActiveMenuId} 
+              yearlyData={Array.from({ length: 12 }, (_, m) => data.loans.filter(l => l.year === viewDate.year && l.month === m+1).reduce((a, c) => a + getLoanSnapshot(c, viewDate.year, m+1).monthlyPayment, 0))}
+            />
+          )}
         </main>
       </div>
       <nav className="bottom-nav">
