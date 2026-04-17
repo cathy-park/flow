@@ -3,7 +3,7 @@ import {
   Home, TrendingUp, CreditCard, Wallet, 
   Settings, Plus, Trash2, 
   Edit3, ChevronLeft, ChevronRight, ChevronRight as ChevronRIcon,
-  X, Calendar, Download, Upload
+  X, Calendar, Download, Upload, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence, useAnimation } from 'framer-motion';
 
