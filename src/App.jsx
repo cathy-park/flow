@@ -289,8 +289,8 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
       )}
       <div className="toss-card summary-card-v2">
         <div className="detail-total-section">
-          <div className="summary-icon-box" style={{ width: '42px', height: '42px' }}>
-            <img src={summaryIcon} alt="" style={{ width: '32px', height: '32px' }} />
+          <div className="summary-icon-box" style={{ width: '44px', height: '44px' }}>
+            <img src={summaryIcon} alt="" className="summary-icon-img" />
           </div>
           <div className="detail-total-wrapper">
             <span className="detail-total-label">이번 달 {title} 총액</span>
