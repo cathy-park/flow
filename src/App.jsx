@@ -118,7 +118,7 @@ function HomeSummaryRow({ icon, label, amount, color, subText, onClick }) {
   return (
     <div className="summary-row" onClick={onClick}>
       <div className="summary-icon-box">
-        {icon.startsWith('http') || icon.startsWith('/') ? <img src={icon} alt="" className="summary-icon-img" /> : <span className="summary-emoji">{icon}</span>}
+        {icon.startsWith('http') || icon.startsWith('/') ? <img src={icon} alt="" className={`summary-icon-img ${icon.includes('tax') ? 'tax-icon' : ''}`} /> : <span className="summary-emoji">{icon}</span>}
       </div>
       <div className="summary-text-stack">
         <div className="summary-header">
@@ -184,7 +184,13 @@ function MonthlyYearlyGraph({ data, currentMonth, type }) {
                 <motion.div 
                   initial={{ height: 0 }}
                   animate={{ height: `${height}px` }}
-                  className={`graph-bar ${isActive ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : 'active')) : ''}`}
+                  className={`graph-bar ${
+                    isActive 
+                      ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : 'active')) 
+                      : (month < currentMonth 
+                          ? (type === 'card' ? 'past-card' : (type === 'tax' ? 'past-tax' : 'past')) 
+                          : '')
+                  }`}
                 />
               </div>
               <span className={`graph-month-label ${isActive ? 'active' : ''}`}>{month}월</span>
@@ -290,7 +296,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
       <div className="toss-card summary-card-v2">
         <div className="detail-total-section">
           <div className="summary-icon-box" style={{ width: '44px', height: '44px' }}>
-            <img src={summaryIcon} alt="" className="summary-icon-img" />
+            <img src={summaryIcon} alt="" className={`summary-icon-img ${title === '세금' ? 'tax-icon' : ''}`} />
           </div>
           <div className="detail-total-wrapper">
             <span className="detail-total-label">이번 달 {title} 총액</span>

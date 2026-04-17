@@ -200,6 +200,7 @@ body {
 }
 
 .summary-icon-img { width: 40px; height: 40px; object-fit: contain; }
+.tax-icon { width: 32px !important; height: 32px !important; }
 .summary-emoji { font-size: 18px; }
 
 .summary-text-stack { display: flex; flex-direction: column; gap: 0px; min-width: 0; flex: 1; text-align: left; }
@@ -462,6 +463,18 @@ body {
 
 .graph-bar.active-tax {
   background: var(--toss-purple);
+}
+
+.graph-bar.past {
+  background: #A0C8FF; /* Pastel Blue */
+}
+
+.graph-bar.past-card {
+  background: #B7E4C7; /* Pastel Green */
+}
+
+.graph-bar.past-tax {
+  background: #CAB9F7; /* Pastel Purple */
 }
 
 .graph-month-label {
