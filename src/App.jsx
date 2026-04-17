@@ -80,7 +80,8 @@ const INITIAL_DATA = {
   ],
   loans: [
     { id: 'l1', product: '청년 전세자금 대출', principal: 150000000, rate: 3.5, term: 120, startDate: '2024-04-01', repaymentMethod: REPAYMENT.EQUAL, monthlyPayment: 1483333, balance: 110000000, day: 1, provider: '신한은행', logoUrl: '/assets/money_stack.png', year: 2026, month: 4 }
-  ]
+  ],
+  taxes: []
 };
 
 const ASSETS = {
@@ -88,6 +89,7 @@ const ASSETS = {
   ICON_INCOME: '/assets/income_bag.png',   
   ICON_EXPENSE: '/assets/wallet_wings.png',
   ICON_CARD: '/assets/card.png',
+  ICON_TAX: 'https://img.icons8.com/color/96/tax.png',
   ICON_LOAN: '/assets/money_stack.png'    
 };
 
@@ -182,7 +184,7 @@ function MonthlyYearlyGraph({ data, currentMonth, type }) {
                 <motion.div 
                   initial={{ height: 0 }}
                   animate={{ height: `${height}px` }}
-                  className={`graph-bar ${isActive ? (type === 'card' ? 'active-card' : 'active') : ''}`}
+                  className={`graph-bar ${isActive ? (type === 'card' ? 'active-card' : (type === 'tax' ? 'active-tax' : 'active')) : ''}`}
                 />
               </div>
               <span className={`graph-month-label ${isActive ? 'active' : ''}`}>{month}월</span>
@@ -225,6 +227,13 @@ function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear,
           onClick={() => onNavigate('expenses')} 
         />
         <HomeSummaryRow 
+          icon="https://img.icons8.com/color/96/tax.png" 
+          label="이번 달 총 세금" 
+          amount={totals.tax} 
+          color="var(--toss-purple)"
+          onClick={() => onNavigate('taxes')} 
+        />
+        <HomeSummaryRow 
           icon="/assets/money_stack.png" 
           label="이번 달 대출 납입" 
           amount={totals.loanMonthly} 
@@ -242,6 +251,7 @@ function HomeView({ viewDate, totals, yearlyTotals, navigateMonth, navigateYear,
           <div className="yearly-stat-row"><span className="stat-label">연간 총 수입</span><Price amount={yearlyTotals.income} color="var(--toss-blue)" className="stat-amount" /></div>
           <div className="yearly-stat-row"><span className="stat-label">연간 총 카드 지출</span><Price amount={yearlyTotals.card} color="var(--toss-green)" className="stat-amount" /></div>
           <div className="yearly-stat-row"><span className="stat-label">연간 총 고정 지출</span><Price amount={yearlyTotals.expense} color="var(--toss-text-main)" className="stat-amount" /></div>
+          <div className="yearly-stat-row"><span className="stat-label">연간 총 세금</span><Price amount={yearlyTotals.tax} color="var(--toss-purple)" className="stat-amount" /></div>
           <div className="yearly-stat-row"><span className="stat-label">연간 대출 상환</span><Price amount={yearlyTotals.loan} color="var(--toss-orange)" className="stat-amount" /></div>
         </div>
       </div>
@@ -258,8 +268,8 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
     return filtered;
   }, [items, viewDate, title]);
   
-  const summaryIcon = title === '수입' ? '/assets/income_bag.png' : (title === '고정지출' ? '/assets/wallet_wings.png' : (title === '카드지출' ? '/assets/card.png' : '/assets/money_stack.png'));
-  const summaryColor = title === '수입' ? 'var(--toss-blue)' : (title === '고정지출' ? 'var(--toss-text-main)' : (title === '카드지출' ? 'var(--toss-green)' : 'var(--toss-orange)'));
+  const summaryIcon = title === '수입' ? '/assets/income_bag.png' : (title === '고정지출' ? '/assets/wallet_wings.png' : (title === '카드지출' ? '/assets/card.png' : (title === '세금' ? 'https://img.icons8.com/color/96/tax.png' : '/assets/money_stack.png')));
+  const summaryColor = title === '수입' ? 'var(--toss-blue)' : (title === '고정지출' ? 'var(--toss-text-main)' : (title === '카드지출' ? 'var(--toss-green)' : (title === '세금' ? 'var(--toss-purple)' : 'var(--toss-orange)')));
   
   const loanSnap = isLoan ? filteredItems.reduce((acc, i) => {
     const snap = getLoanSnapshot(i, viewDate.year, viewDate.month);
@@ -274,7 +284,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
         <MonthlyYearlyGraph 
           data={yearlyData} 
           currentMonth={viewDate.month} 
-          type={title === '카드지출' ? 'card' : 'income'} 
+          type={title === '카드지출' ? 'card' : (title === '세금' ? 'tax' : 'income')} 
         />
       )}
       <div className="toss-card summary-card-v2">
@@ -545,7 +555,7 @@ export default function App() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return INITIAL_DATA;
       const parsed = JSON.parse(saved);
-      return (parsed.incomes && parsed.expenses && parsed.loans) ? parsed : INITIAL_DATA;
+      return (parsed.incomes && parsed.expenses && parsed.loans) ? { ...INITIAL_DATA, ...parsed } : INITIAL_DATA;
     } catch (e) { return INITIAL_DATA; }
   });
 
@@ -562,7 +572,7 @@ export default function App() {
     let nm = viewDate.month + step, ny = viewDate.year;
     if (nm > 12) { nm = 1; ny++; } else if (nm < 1) { nm = 12; ny--; }
     const nextDate = { year: ny, month: nm };
-    const exists = (data.incomes.some(i => i.year === ny && i.month === nm) || data.expenses.some(i => i.year === ny && i.month === nm) || data.loans.some(i => i.year === ny && i.month === nm));
+    const exists = (data.incomes.some(i => i.year === ny && i.month === nm) || data.expenses.some(i => i.year === ny && i.month === nm) || (data.cardExpenses || []).some(i => i.year === ny && i.month === nm) || (data.taxes || []).some(i => i.year === ny && i.month === nm) || data.loans.some(i => i.year === ny && i.month === nm));
     if (!exists) setClonePrompt({ isOpen: true, target: nextDate, source: { ...viewDate } });
     setViewDate(nextDate);
   };
@@ -583,6 +593,7 @@ export default function App() {
             if (sector === 'incomes') return ti.source === si.source && ti.provider === si.provider;
             if (sector === 'expenses') return ti.name === si.name && ti.provider === si.provider;
             if (sector === 'cardExpenses') return ti.name === si.name && ti.provider === si.provider;
+            if (sector === 'taxes') return ti.name === si.name && ti.provider === si.provider;
             if (sector === 'loans') return ti.product === si.product && ti.provider === si.provider;
             return false;
           }))
@@ -602,6 +613,7 @@ export default function App() {
         incomes: [...prev.incomes, ...clone(prev.incomes, 'incomes')], 
         expenses: [...prev.expenses, ...clone(prev.expenses, 'expenses')], 
         cardExpenses: [...(prev.cardExpenses || []), ...clone(prev.cardExpenses || [], 'cardExpenses')],
+        taxes: [...(prev.taxes || []), ...clone(prev.taxes || [], 'taxes')],
         loans: [...prev.loans, ...clone(prev.loans, 'loans')] 
       };
     });
@@ -625,6 +637,7 @@ export default function App() {
             if (sector === 'incomes') return ti.source === si.source && ti.provider === si.provider;
             if (sector === 'expenses') return ti.name === si.name && ti.provider === si.provider;
             if (sector === 'cardExpenses') return ti.name === si.name && ti.provider === si.provider;
+            if (sector === 'taxes') return ti.name === si.name && ti.provider === si.provider;
             if (sector === 'loans') return ti.product === si.product && ti.provider === si.provider;
             return false;
           }))
@@ -647,6 +660,7 @@ export default function App() {
       const newIncomes = clone(prev.incomes, 'incomes');
       const newExpenses = clone(prev.expenses, 'expenses');
       const newCardExpenses = clone(prev.cardExpenses || [], 'cardExpenses');
+      const newTaxes = clone(prev.taxes || [], 'taxes');
       const newLoans = clone(prev.loans, 'loans');
 
       if (importedCount === 0) {
@@ -658,6 +672,7 @@ export default function App() {
         incomes: [...prev.incomes, ...newIncomes], 
         expenses: [...prev.expenses, ...newExpenses], 
         cardExpenses: [...(prev.cardExpenses || []), ...newCardExpenses],
+        taxes: [...(prev.taxes || []), ...newTaxes],
         loans: [...prev.loans, ...newLoans] 
       };
     });
@@ -666,8 +681,8 @@ export default function App() {
   };
 
   const totals = useMemo(() => {
-    const cur = { incomes: data.incomes.filter(i => i.year === viewDate.year && i.month === viewDate.month), expenses: data.expenses.filter(i => i.year === viewDate.year && i.month === viewDate.month), cardExpenses: (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month === viewDate.month), loans: data.loans.filter(i => i.year === viewDate.year && i.month === viewDate.month) };
-    const inc = cur.incomes.reduce((a,c) => a + c.amount, 0), exp = cur.expenses.reduce((a,c) => a + c.amount, 0), cardExp = cur.cardExpenses.reduce((a,c) => a + c.amount, 0);
+    const cur = { incomes: data.incomes.filter(i => i.year === viewDate.year && i.month === viewDate.month), expenses: data.expenses.filter(i => i.year === viewDate.year && i.month === viewDate.month), cardExpenses: (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month === viewDate.month), taxes: (data.taxes || []).filter(i => i.year === viewDate.year && i.month === viewDate.month), loans: data.loans.filter(i => i.year === viewDate.year && i.month === viewDate.month) };
+    const inc = cur.incomes.reduce((a,c) => a + c.amount, 0), exp = cur.expenses.reduce((a,c) => a + c.amount, 0), cardExp = cur.cardExpenses.reduce((a,c) => a + c.amount, 0), taxExp = cur.taxes.reduce((a,c) => a + c.amount, 0);
     
     let loanMonthlyTotal = 0;
     let loanBalanceTotal = 0;
@@ -681,7 +696,7 @@ export default function App() {
     });
 
     const progressTotal = loanPrincipalTotal ? Math.floor(((loanPrincipalTotal - loanBalanceTotal) / loanPrincipalTotal) * 100) : 0;
-    return { income: inc, expense: exp, cardExpense: cardExp, loanMonthly: loanMonthlyTotal, loanBalance: loanBalanceTotal, loanProgress: progressTotal };
+    return { income: inc, expense: exp, cardExpense: cardExp, tax: taxExp, loanMonthly: loanMonthlyTotal, loanBalance: loanBalanceTotal, loanProgress: progressTotal };
   }, [data, viewDate]);
 
   const yearlyTotals = useMemo(() => {
@@ -690,6 +705,7 @@ export default function App() {
     const incSum = data.incomes.filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
     const expSum = data.expenses.filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
     const cardSum = (data.cardExpenses || []).filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
+    const taxSum = (data.taxes || []).filter(i => i.year === viewDate.year && i.month <= limitM).reduce((a,c) => a + c.amount, 0);
     let loanSum = 0;
     for (let m = 1; m <= limitM; m++) {
       data.loans.filter(l => l.year === viewDate.year && l.month === m).forEach(l => {
@@ -697,7 +713,7 @@ export default function App() {
         loanSum += snap.monthlyPayment;
       });
     }
-    return { income: incSum, expense: expSum, card: cardSum, loan: loanSum };
+    return { income: incSum, expense: expSum, card: cardSum, tax: taxSum, loan: loanSum };
   }, [data, viewDate.year]);
 
   const saveItem = (i) => {
@@ -760,6 +776,21 @@ export default function App() {
               setActiveMenuId={setActiveMenuId} 
             />
           )}
+          {activeTab === 'taxes' && (
+            <DetailTab 
+              title="세금" 
+              total={totals.tax} 
+              items={data.taxes || []} 
+              viewDate={viewDate} 
+              navigateMonth={navigateMonth} 
+              onAdd={() => setModal({ type: 'add', sector: 'taxes', item: { amount: 0, day: 1 } })} 
+              onEdit={i => setModal({ type: 'edit', sector: 'taxes', item: i })} 
+              onDelete={i => { setModal({ type: 'delete_confirm', sector: 'taxes', item: i }); setActiveMenuId(null); }} 
+              activeMenuId={activeMenuId} 
+              setActiveMenuId={setActiveMenuId} 
+              yearlyData={Array.from({ length: 12 }, (_, m) => (data.taxes || []).filter(i => i.year === viewDate.year && i.month === m+1).reduce((a, c) => a + c.amount, 0))}
+            />
+          )}
           {activeTab === 'loans' && <DetailTab title="대출" total={totals.loanMonthly} items={data.loans} isLoan viewDate={viewDate} navigateMonth={navigateMonth} onAdd={() => setModal({ type: 'add', sector: 'loans', item: { principal: 0, rate: 0, term: 12, repaymentMethod: REPAYMENT.EQUAL } })} onEdit={i => setModal({ type: 'edit', sector: 'loans', item: i })} onDelete={i => { setModal({ type: 'delete_confirm', sector: 'loans', item: i }); setActiveMenuId(null); }} activeMenuId={activeMenuId} setActiveMenuId={setActiveMenuId} />}
         </main>
       </div>
@@ -768,6 +799,7 @@ export default function App() {
         <NavItem label="수입" Icon={TrendingUp} active={activeTab === 'incomes'} onClick={() => setActiveTab('incomes')} />
         <NavItem label="카드지출" Icon={CreditCard} active={activeTab === 'cardExpenses'} onClick={() => setActiveTab('cardExpenses')} />
         <NavItem label="고정지출" Icon={Calendar} active={activeTab === 'expenses'} onClick={() => setActiveTab('expenses')} />
+        <NavItem label="세금" Icon={FileText} active={activeTab === 'taxes'} onClick={() => setActiveTab('taxes')} />
         <NavItem label="대출" Icon={Wallet} active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} />
       </nav>
       <AnimatePresence>

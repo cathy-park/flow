@@ -13,6 +13,7 @@
   --toss-red: #F04452;
   --toss-green: #2DB400;
   --toss-orange: #FF7D00;
+  --toss-purple: #7047EB;
 
   --font-main: 'Pretendard', sans-serif;
   --card-radius: 20px;
@@ -457,6 +458,10 @@ body {
 
 .graph-bar.active-card {
   background: var(--toss-green);
+}
+
+.graph-bar.active-tax {
+  background: var(--toss-purple);
 }
 
 .graph-month-label {
