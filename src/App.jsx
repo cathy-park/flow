@@ -23,46 +23,71 @@ const REPAYMENT = {
 
 // --- CALCULATORS ---
 const getLoanSnapshot = (item, year, month) => {
-  const { principal = 0, rate = 0, term = 12, repaymentMethod = REPAYMENT.EQUAL, startDate = '2000-01-01', inputMode = 'auto', manualAmount = 0, manualBalance = 0 } = item;
+  const { 
+    principal = 0, rate = 0, term = 12, 
+    repaymentMethod = REPAYMENT.EQUAL, 
+    startDate = '', 
+    inputMode = 'auto', 
+    manualAmount = 0, 
+    manualBalance = 0 
+  } = item;
   
-  const [sY, sM] = startDate.split('-').map(Number);
-  const startTotalMonths = sY * 12 + (sM || 1);
+  // Use today as fallback if startDate is invalid
+  const dateStr = startDate || `${year}-${String(month).padStart(2, '0')}-01`;
+  const [sY, sM] = dateStr.split('-').map(Number);
+  const startTotalMonths = (sY || year) * 12 + (sM || month);
   const targetTotalMonths = year * 12 + month;
   const monthsPassed = targetTotalMonths - startTotalMonths;
 
-  if (monthsPassed < 0) return { monthlyPayment: 0, interest: 0, principalPaid: 0, remainingBalance: principal, progress: 0 };
-  if (monthsPassed >= term) return { monthlyPayment: 0, interest: 0, principalPaid: 0, remainingBalance: 0, progress: 100 };
-
   if (inputMode === 'manual') {
     const progress = principal ? Math.floor(((principal - manualBalance) / principal) * 100) : 0;
-    return { monthlyPayment: manualAmount, interest: 0, principalPaid: principal - manualBalance, remainingBalance: manualBalance, progress };
+    return { monthlyPayment: manualAmount, interest: 0, principalPaid: 0, remainingBalance: manualBalance, progress };
   }
 
-  let currentBalance = principal;
-  let monthlyPayment = 0;
   const monthlyRate = (rate || 0) / 12 / 100;
-
+  let monthlyPayment = 0;
+  
   if (repaymentMethod === REPAYMENT.BULLET) {
     monthlyPayment = Math.floor(principal * monthlyRate);
-    if (monthsPassed === term - 1) monthlyPayment += principal;
-    currentBalance = principal; 
-    if (monthsPassed >= term) currentBalance = 0;
   } else {
     if (monthlyRate === 0) {
       monthlyPayment = Math.floor(principal / term);
     } else {
       monthlyPayment = Math.floor((principal * monthlyRate * Math.pow(1 + monthlyRate, term)) / (Math.pow(1 + monthlyRate, term) - 1));
     }
+  }
 
-    for (let i = 0; i <= monthsPassed; i++) {
-      const interest = Math.floor(currentBalance * monthlyRate);
-      const principalRepaid = monthlyPayment - interest;
-      currentBalance -= principalRepaid;
+  // If calculating for a month before the loan starts or after it ends, 
+  // we usually return 0. But for the modal preview (where monthsPassed might be out of range),
+  // we should still return the calculated monthlyPayment.
+  if (monthsPassed < 0 && startDate) return { monthlyPayment: 0, interest: 0, principalPaid: 0, remainingBalance: principal, progress: 0 };
+  if (monthsPassed >= term && startDate) return { monthlyPayment: 0, interest: 0, principalPaid: 0, remainingBalance: 0, progress: 100 };
+
+  let currentBalance = principal;
+  let interest = 0;
+  let principalPaid = 0;
+
+  // Simulate up to the current month to find remaining balance and current month's interest
+  const limit = Math.max(0, monthsPassed);
+  for (let i = 0; i <= limit; i++) {
+    interest = Math.floor(currentBalance * monthlyRate);
+    if (repaymentMethod === REPAYMENT.BULLET) {
+      principalPaid = (i === term - 1) ? principal : 0;
+      if (i === term - 1) monthlyPayment = interest + principal;
+    } else {
+      principalPaid = monthlyPayment - interest;
     }
+    currentBalance -= principalPaid;
   }
 
   const progress = principal ? Math.min(100, Math.floor(((principal - currentBalance) / principal) * 100)) : 0;
-  return { monthlyPayment, remainingBalance: Math.max(0, currentBalance), progress };
+  return { 
+    monthlyPayment, 
+    interest, 
+    principalPaid, 
+    remainingBalance: Math.max(0, currentBalance), 
+    progress 
+  };
 };
 
 // --- INITIAL DATA ---
@@ -414,7 +439,20 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
     setF(nextF);
   };
 
-  const autoSnap = isLoan ? getLoanSnapshot(f, viewDate.year, viewDate.month) : null;
+  // For the preview in the modal, we want to show the scheduled payment regardless of the global viewDate.
+  // We'll calculate it for the first month of the loan.
+  const previewSnap = useMemo(() => {
+    if (!isLoan) return null;
+    let y = viewDate.year, m = viewDate.month;
+    if (f.startDate) {
+      const parts = f.startDate.split('-').map(Number);
+      if (parts[0]) y = parts[0];
+      if (parts[1]) m = parts[1];
+    }
+    return getLoanSnapshot(f, y, m);
+  }, [f, isLoan, viewDate]);
+
+  const autoSnap = previewSnap;
 
   return (
     <div className="modal-backdrop" onClick={() => setModal({ type: null })}>
@@ -475,6 +513,18 @@ function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
                         <div key={i} className={`chart-bar ${i > 10 ? 'active' : ''}`} style={{ height: `${h * 10}%` }} />
                       ))}
                     </div>
+                    {autoSnap && (
+                      <div className="preview-breakdown" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                          <span style={{ color: 'var(--toss-text-sub)' }}>월 이자</span>
+                          <span style={{ fontWeight: 700, color: 'var(--toss-red)' }}>{formatCurrency(autoSnap.interest)}원</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+                          <span style={{ color: 'var(--toss-text-sub)' }}>월 원금</span>
+                          <span style={{ fontWeight: 700, color: 'var(--toss-text-main)' }}>{formatCurrency(autoSnap.principalPaid)}원</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="form-group" style={{ marginBottom: '1.2rem', marginTop: '1.2rem' }}><label className="form-label">시작 날짜</label><div className="toss-input-container" style={{ position: 'relative' }}><input className="toss-input" type="date" value={f.startDate || ''} onChange={e => setF({...f, startDate: e.target.value})} /><div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#111' }}><Calendar size={18} strokeWidth={2.5} /></div></div></div>
                 </>
