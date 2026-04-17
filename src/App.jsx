@@ -368,7 +368,7 @@ function DetailTab({ title, total, items, viewDate, navigateMonth, onAdd, onEdit
   );
 }
 
-function ModalUI({ modal, onSave, setModal, viewDate }) {
+function ModalUI({ modal, onSave, setModal, viewDate, nameToIconMap }) {
   const [f, setF] = useState({ 
     inputMode: 'auto',
     manualAmount: 0,
@@ -398,6 +398,15 @@ function ModalUI({ modal, onSave, setModal, viewDate }) {
     setBalStr(n > 0 ? formatCurrency(n) : '');
     setF({ ...f, manualBalance: n });
   };
+  
+  const handleNameChange = (newName) => {
+    const field = isLoan ? 'product' : (modal.sector === 'incomes' ? 'source' : 'name');
+    const nextF = { ...f, [field]: newName };
+    if (nameToIconMap[newName] && !f.logoUrl) {
+      nextF.logoUrl = nameToIconMap[newName];
+    }
+    setF(nextF);
+  };
 
   const autoSnap = isLoan ? getLoanSnapshot(f, viewDate.year, viewDate.month) : null;
 
@@ -421,7 +430,15 @@ function ModalUI({ modal, onSave, setModal, viewDate }) {
 
           <div className="form-group" style={{ marginBottom: '1.2rem' }}>
             <label className="form-label">{isLoan ? '대출 상품명' : '항목명'}</label>
-            <div className="toss-input-container"><input className="toss-input" value={f.source || f.name || f.product || ''} onChange={e => setF({...f, [isLoan ? 'product' : (modal.sector === 'incomes' ? 'source' : 'name')]: e.target.value})} placeholder="어디서 발생했나요?" autoFocus /></div>
+            <div className="toss-input-container">
+              <input 
+                className="toss-input" 
+                value={f.source || f.name || f.product || ''} 
+                onChange={e => handleNameChange(e.target.value)} 
+                placeholder="어디서 발생했나요?" 
+                autoFocus 
+              />
+            </div>
           </div>
 
           {isLoan ? (
@@ -565,6 +582,20 @@ export default function App() {
   const [clonePrompt, setClonePrompt] = useState({ isOpen: false, target: null, source: null });
   const [activeMenuId, setActiveMenuId] = useState(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  const nameToIconMap = useMemo(() => {
+    const map = {};
+    const categories = ['incomes', 'expenses', 'cardExpenses', 'taxes', 'loans'];
+    categories.forEach(cat => {
+      (data[cat] || []).forEach(item => {
+        const name = item.source || item.name || item.product;
+        if (name && item.logoUrl && !map[name]) {
+          map[name] = item.logoUrl;
+        }
+      });
+    });
+    return map;
+  }, [data]);
 
   useEffect(() => localStorage.setItem(STORAGE_KEY, JSON.stringify(data)), [data]);
 
@@ -803,7 +834,7 @@ export default function App() {
         <NavItem label="대출" Icon={Wallet} active={activeTab === 'loans'} onClick={() => setActiveTab('loans')} />
       </nav>
       <AnimatePresence>
-        {modal.type === 'delete_confirm' ? (
+        {modal.type === 'delete_confirm' && (
           <div className="modal-backdrop" onClick={() => setModal({type:null})}>
             <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
               <div className="modal-header">
@@ -817,10 +848,17 @@ export default function App() {
               </div>
             </motion.div>
           </div>
-        ) : (
-          modal.type && <ModalUI modal={modal} onSave={saveItem} setModal={setModal} viewDate={viewDate} />
         )}
-        {isSettingsOpen && <SettingsModal data={data} setData={setData} onClose={()=>setIsSettingsOpen(false)} />}
+        {isSettingsOpen && <SettingsModal data={data} setData={setData} onClose={() => setIsSettingsOpen(false)} />}
+        {modal.type && modal.type !== 'delete_confirm' && (
+          <ModalUI 
+            modal={modal} 
+            onSave={saveItem} 
+            setModal={setModal} 
+            viewDate={viewDate} 
+            nameToIconMap={nameToIconMap} 
+          />
+        )}
         {clonePrompt.isOpen && (
           <div className="modal-backdrop" onClick={()=>setClonePrompt({...clonePrompt,isOpen:false})}>
             <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} className="modal-box">
