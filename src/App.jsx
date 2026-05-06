@@ -631,7 +631,10 @@ export default function App() {
     } catch (e) { return INITIAL_DATA; }
   });
 
-  const [viewDate, setViewDate] = useState({ year: 2026, month: 4 });
+  const [viewDate, setViewDate] = useState(() => {
+    const today = new Date();
+    return { year: today.getFullYear(), month: today.getMonth() + 1 };
+  });
   const [activeTab, setActiveTab] = useState('home');
   const [modal, setModal] = useState({ type: null, sector: null, item: null });
   const [clonePrompt, setClonePrompt] = useState({ isOpen: false, target: null, source: null });
